@@ -1,0 +1,1188 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOSTALGIA NIGHT — Billetterie Officielle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- PDF généré côté serveur -->
+    <style>
+        :root {
+            --pink: #FF1493;
+            --pink-dark: #cc0077;
+            --cyan: #00FFFF;
+            --yellow: #FFD700;
+            --purple: #B24BF3;
+            --orange: #FF6600;
+            --green: #00FF41;
+            --dark: #050505;
+            --dark2: #0f0f0f;
+            --dark3: #1a1a1a;
+            --card-bg: #0d0d12;
+            --white: #FFFFFF;
+            --gray: #888888;
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background: var(--dark);
+            color: var(--white);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 16px;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,20,147,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,20,147,0.025) 1px, transparent 1px);
+            background-size: 44px 44px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        h1, h2, h3 { font-family: 'Bebas Neue', cursive; letter-spacing: 2px; }
+        .neon-pink  { color: var(--pink);   text-shadow: 0 0 8px var(--pink),   0 0 24px var(--pink),   0 0 48px rgba(255,20,147,.45); }
+        .neon-cyan  { color: var(--cyan);   text-shadow: 0 0 8px var(--cyan),   0 0 24px var(--cyan),   0 0 48px rgba(0,255,255,.45); }
+        .neon-yellow{ color: var(--yellow); text-shadow: 0 0 8px var(--yellow), 0 0 20px var(--yellow); }
+
+        /* ── NAVBAR ── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 32px;
+            background: rgba(5,5,5,.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,20,147,.25);
+        }
+        .nav-logo { font-family: 'Bebas Neue', cursive; font-size: 1.5rem; letter-spacing: 3px; }
+        .nav-links { display: flex; gap: 16px; align-items: center; }
+        .nav-link {
+            background: transparent; border: 1px solid rgba(0,255,255,.3);
+            color: var(--cyan); padding: 8px 18px;
+            font-family: 'Bebas Neue', cursive; font-size: .9rem; letter-spacing: 2px;
+            cursor: pointer; transition: all .2s;
+        }
+        .nav-link:hover { background: rgba(0,255,255,.1); }
+        .nav-btn {
+            background: var(--pink); color: #000; border: none;
+            padding: 10px 26px;
+            font-family: 'Bebas Neue', cursive; font-size: 1rem; letter-spacing: 2px;
+            cursor: pointer;
+            clip-path: polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+            transition: all .2s;
+        }
+        .nav-btn:hover { background: var(--cyan); transform: scale(1.04); }
+
+        /* ── HERO ── */
+        .hero {
+            position: relative; min-height: 100vh;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center;
+            padding: 110px 24px 70px; overflow: hidden;
+        }
+        .hero-bg {
+            position: absolute; inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(178,75,243,.18) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(255,20,147,.18) 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 85%, rgba(0,255,255,.12) 0%, transparent 60%);
+        }
+        .hero-date {
+            background: var(--cyan); color: #000;
+            font-family: 'Bebas Neue', cursive; font-size: 1.1rem; letter-spacing: 3px;
+            padding: 5px 20px; margin-bottom: 18px;
+            clip-path: polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);
+            display: inline-block;
+        }
+        .hero-subtitle {
+            font-family: 'Orbitron', monospace; font-size: .8rem;
+            letter-spacing: 6px; color: var(--gray); margin-bottom: 8px;
+        }
+        .hero-title { font-family: 'Bebas Neue', cursive; font-size: clamp(4.5rem,14vw,11rem); line-height: .85; }
+        .hero-title-main { display: block; color: var(--white); }
+        .hero-title-night {
+            display: block; color: var(--pink); font-style: italic;
+            text-shadow: 0 0 20px var(--pink), 0 0 50px var(--pink), 0 0 90px rgba(255,20,147,.5);
+        }
+        .hero-location {
+            display: flex; align-items: center; gap: 8px;
+            margin: 22px 0 6px; font-size: 1.25rem; font-weight: 700; letter-spacing: 2px;
+        }
+        .hero-location span { color: var(--yellow); }
+        .hero-desc { color: var(--gray); font-size: .9rem; letter-spacing: 2px; margin-bottom: 38px; }
+        .hero-btns { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+        .btn-primary {
+            background: linear-gradient(135deg,var(--pink),var(--purple));
+            color: #fff; border: none; padding: 16px 42px;
+            font-family: 'Bebas Neue', cursive; font-size: 1.3rem; letter-spacing: 3px;
+            cursor: pointer;
+            clip-path: polygon(12px 0%,100% 0%,calc(100% - 12px) 100%,0% 100%);
+            transition: all .3s; position: relative; overflow: hidden;
+        }
+        .btn-primary::before {
+            content:''; position:absolute; top:0; left:-100%; width:100%; height:100%;
+            background: linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
+            transition: left .5s;
+        }
+        .btn-primary:hover::before { left: 100%; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(255,20,147,.5); }
+        .btn-secondary {
+            background: transparent; color: var(--cyan); border: 2px solid var(--cyan);
+            padding: 14px 40px; font-family: 'Bebas Neue', cursive; font-size: 1.3rem; letter-spacing: 3px;
+            cursor: pointer;
+            clip-path: polygon(12px 0%,100% 0%,calc(100% - 12px) 100%,0% 100%);
+            transition: all .3s;
+        }
+        .btn-secondary:hover { background: var(--cyan); color: #000; box-shadow: 0 8px 32px rgba(0,255,255,.3); }
+
+        .float-badge {
+            position: absolute;
+            background: var(--yellow); color: #000;
+            font-family: 'Orbitron', monospace; font-size: .6rem; font-weight: 700; letter-spacing: 1px;
+            padding: 5px 12px; border-radius: 50px;
+            animation: float-anim 3s ease-in-out infinite;
+        }
+        .float-badge.tr { top: 14%; right: 7%; animation-delay: .5s; }
+        .float-badge.tl { top: 20%; left: 5%; animation-delay: 1s; }
+        @keyframes float-anim { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-10px);} }
+
+        .deco-icon {
+            position: absolute; font-size: 5rem; opacity: .07;
+            animation: spin-slow 22s linear infinite;
+        }
+        .deco-icon.r { right: 4%; top: 28%; }
+        .deco-icon.l { left: 2%; bottom: 18%; font-size: 3.5rem; animation-direction: reverse; }
+        .deco-smiley { position:absolute; font-size:3rem; opacity:.12; right:9%; bottom:22%; animation: float-anim 4s ease-in-out infinite; }
+        @keyframes spin-slow { to { transform: rotate(360deg); } }
+
+        /* ── COUNTDOWN ── */
+        .countdown-section {
+            background: var(--dark2);
+            border-top: 1px solid rgba(255,20,147,.2);
+            border-bottom: 1px solid rgba(255,20,147,.2);
+            padding: 44px 24px; text-align: center;
+        }
+        .countdown-label { font-family:'Orbitron',monospace; font-size:.75rem; letter-spacing:4px; color:var(--gray); margin-bottom:22px; }
+        .countdown { display:flex; justify-content:center; gap:20px; flex-wrap:wrap; align-items:center; }
+        .cd-item { display:flex; flex-direction:column; align-items:center; min-width:80px; }
+        .cd-num {
+            font-family:'Orbitron',monospace; font-size:3rem; font-weight:900;
+            color:var(--pink); text-shadow:0 0 20px var(--pink); line-height:1; min-width:2ch; text-align:center;
+        }
+        .cd-unit { font-size:.7rem; letter-spacing:3px; color:var(--gray); margin-top:4px; }
+        .cd-sep { font-family:'Orbitron',monospace; font-size:2.5rem; color:var(--pink); margin-bottom:16px; animation:blink 1s infinite; }
+        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+        /* ── INFO BAR ── */
+        .info-bar {
+            background: var(--dark2); padding: 50px 24px;
+            border-bottom: 1px solid rgba(255,255,255,.04);
+        }
+        .info-grid { max-width:860px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:32px; text-align:center; }
+        .info-icon { font-size:2rem; margin-bottom:10px; }
+        .info-label { font-family:'Orbitron',monospace; font-size:.62rem; letter-spacing:3px; color:var(--gray); margin-bottom:5px; }
+        .info-value { font-family:'Bebas Neue',cursive; font-size:1.35rem; letter-spacing:2px; }
+
+        /* ── TICKETS ── */
+        .tickets-section { padding:80px 24px; max-width:920px; margin:0 auto; text-align:center; }
+        .section-title { font-family:'Bebas Neue',cursive; font-size:clamp(2.4rem,6vw,4.5rem); letter-spacing:4px; margin-bottom:8px; }
+        .section-div { width:80px; height:3px; background:linear-gradient(90deg,var(--pink),var(--cyan)); margin:0 auto 40px; }
+        .tickets-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:24px; margin-top:40px; }
+
+        .ticket-card {
+            background: var(--card-bg);
+            border: 2px solid rgba(255,255,255,.07);
+            padding: 34px 26px; position: relative; overflow: hidden;
+            cursor: pointer; transition: all .3s;
+            clip-path: polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px));
+        }
+        .ticket-card::after {
+            content:''; position:absolute; inset:0;
+            background:linear-gradient(135deg,transparent 55%,rgba(255,255,255,.025));
+        }
+        .ticket-card.classic:hover {
+            border-color: var(--cyan);
+            box-shadow: 0 0 32px rgba(0,255,255,.2), inset 0 0 32px rgba(0,255,255,.04);
+            transform: translateY(-5px);
+        }
+        .ticket-card.vip:hover {
+            border-color: var(--pink);
+            box-shadow: 0 0 32px rgba(255,20,147,.25), inset 0 0 32px rgba(255,20,147,.04);
+            transform: translateY(-5px);
+        }
+        .ticket-badge {
+            display:inline-block; font-family:'Orbitron',monospace;
+            font-size:.65rem; letter-spacing:3px; padding:3px 12px; margin-bottom:14px;
+        }
+        .ticket-card.classic .ticket-badge { background:rgba(0,255,255,.08); color:var(--cyan); border:1px solid var(--cyan); }
+        .ticket-card.vip   .ticket-badge { background:rgba(255,20,147,.08); color:var(--pink); border:1px solid var(--pink); }
+        .ticket-name { font-family:'Bebas Neue',cursive; font-size:2rem; letter-spacing:4px; margin-bottom:8px; }
+        .ticket-price { font-family:'Orbitron',monospace; font-size:2.6rem; font-weight:900; margin-bottom:4px; }
+        .ticket-currency { font-size:.95rem; color:var(--gray); margin-bottom:24px; }
+        .ticket-divider { border:none; border-top:1px dashed rgba(255,255,255,.12); margin:18px 0; }
+        .ticket-perks { list-style:none; text-align:left; margin-bottom:28px; }
+        .ticket-perks li {
+            padding:6px 0; font-size:1rem; font-weight:600; letter-spacing:.5px;
+            display:flex; align-items:center; gap:8px;
+        }
+        .ticket-perks li::before { content:'✓'; font-weight:900; }
+        .ticket-card.classic .ticket-perks li::before { color:var(--cyan); }
+        .ticket-card.vip   .ticket-perks li::before { color:var(--pink); }
+        .ticket-cta {
+            width:100%; padding:14px;
+            font-family:'Bebas Neue',cursive; font-size:1.2rem; letter-spacing:3px;
+            border:none; cursor:pointer; transition:all .3s;
+        }
+        .ticket-card.classic .ticket-cta { background:var(--cyan); color:#000; }
+        .ticket-card.classic .ticket-cta:hover { background:#00d4d4; box-shadow:0 4px 22px rgba(0,255,255,.4); }
+        .ticket-card.vip   .ticket-cta { background:var(--pink); color:#000; }
+        .ticket-card.vip   .ticket-cta:hover { background:var(--pink-dark); box-shadow:0 4px 22px rgba(255,20,147,.4); }
+        .vip-crown { position:absolute; top:14px; right:16px; font-size:1.5rem; opacity:.5; }
+        .popular-badge {
+            position:absolute; top:-1px; left:50%; transform:translateX(-50%);
+            background:var(--yellow); color:#000;
+            font-family:'Orbitron',monospace; font-size:.58rem; font-weight:700; letter-spacing:2px;
+            padding:4px 18px;
+        }
+
+        /* ── MY TICKETS ── */
+        .my-tickets-section { padding:60px 24px; max-width:920px; margin:0 auto; }
+        .my-tickets-grid { display:grid; gap:14px; margin-top:28px; }
+        .saved-ticket {
+            background:var(--card-bg); border:1px solid rgba(255,255,255,.07);
+            padding:18px 22px; display:flex; justify-content:space-between;
+            align-items:center; flex-wrap:wrap; gap:12px; transition:border-color .3s;
+        }
+        .saved-ticket:hover { border-color:rgba(255,20,147,.3); }
+        .saved-ticket-name { font-family:'Bebas Neue',cursive; font-size:1.15rem; letter-spacing:2px; margin-bottom:3px; }
+        .saved-ticket-details { font-size:.82rem; color:var(--gray); letter-spacing:.8px; }
+        .saved-ticket-actions { display:flex; gap:8px; }
+        .btn-sm { padding:8px 16px; font-family:'Bebas Neue',cursive; font-size:.88rem; letter-spacing:2px; cursor:pointer; border:none; transition:all .2s; }
+        .btn-sm-pink { background:var(--pink); color:#000; }
+        .btn-sm-pink:hover { background:var(--pink-dark); }
+        .btn-sm-red { background:#cc2200; color:#fff; }
+        .btn-sm-red:hover { background:#ff2200; }
+        .empty-tickets {
+            text-align:center; padding:48px; color:var(--gray);
+            font-size:.95rem; letter-spacing:1px;
+            border:1px dashed rgba(255,255,255,.1);
+        }
+
+        /* ── SCANNER BANNER ── */
+        .scanner-banner {
+            max-width:920px; margin:0 auto 60px; padding:0 24px;
+        }
+        .scanner-inner {
+            background:linear-gradient(135deg,rgba(0,255,255,.04),rgba(255,20,147,.04));
+            border:1px solid rgba(0,255,255,.2);
+            padding:20px 28px; display:flex; justify-content:space-between;
+            align-items:center; flex-wrap:wrap; gap:12px;
+        }
+        .scanner-text strong { display:block; color:var(--cyan); font-family:'Bebas Neue',cursive; font-size:1.1rem; letter-spacing:2px; margin-bottom:3px; }
+        .scanner-text { font-size:.82rem; color:var(--gray); letter-spacing:1px; }
+        .btn-outline {
+            padding:9px 20px; background:transparent; border:1px solid rgba(255,255,255,.2);
+            color:var(--white); font-family:'Bebas Neue',cursive; font-size:.9rem; letter-spacing:2px;
+            cursor:pointer; transition:all .2s;
+        }
+        .btn-outline:hover { border-color:var(--cyan); color:var(--cyan); }
+
+        /* ── FOOTER ── */
+        footer {
+            background:var(--dark); border-top:1px solid rgba(255,20,147,.2);
+            padding:48px 24px; text-align:center;
+        }
+        .footer-title { font-family:'Bebas Neue',cursive; font-size:2rem; letter-spacing:4px; margin-bottom:14px; }
+        .footer-contacts { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-bottom:24px; }
+        .footer-contact { display:flex; align-items:center; gap:8px; color:var(--cyan); font-size:1rem; font-weight:600; letter-spacing:1px; }
+        .footer-bottom { color:var(--gray); font-size:.75rem; letter-spacing:2px; margin-top:20px; }
+
+        /* ══════════════════════════════════
+           MODAL
+        ══════════════════════════════════ */
+        .modal-overlay {
+            display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,.93); backdrop-filter:blur(10px);
+            z-index:500; overflow-y:auto; padding:20px;
+        }
+        .modal-overlay.active { display:flex; align-items:flex-start; justify-content:center; }
+        .modal {
+            background:var(--dark2); border:1px solid rgba(255,20,147,.28);
+            width:100%; max-width:550px; padding:42px 34px;
+            position:relative; margin:auto;
+            clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,22px 100%,0 calc(100% - 22px));
+        }
+        .modal-close {
+            position:absolute; top:16px; right:16px;
+            background:transparent; border:1px solid rgba(255,255,255,.18);
+            color:var(--white); width:32px; height:32px;
+            cursor:pointer; font-size:.95rem; display:flex; align-items:center; justify-content:center;
+            transition:all .2s;
+        }
+        .modal-close:hover { background:var(--pink); border-color:var(--pink); }
+
+        /* Steps */
+        .steps {
+            display:flex; align-items:center; margin-bottom:30px;
+        }
+        .step-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; position:relative; }
+        .step-item::after {
+            content:''; position:absolute; top:13px; left:55%; right:-5%;
+            height:1px; background:rgba(255,255,255,.08);
+        }
+        .step-item:last-child::after { display:none; }
+        .step-circle {
+            width:26px; height:26px; border-radius:50%;
+            border:2px solid rgba(255,255,255,.1); background:var(--dark);
+            display:flex; align-items:center; justify-content:center;
+            font-family:'Orbitron',monospace; font-size:.65rem; color:var(--gray);
+            transition:all .3s; position:relative; z-index:1;
+        }
+        .step-item.active .step-circle { border-color:var(--pink); color:var(--pink); box-shadow:0 0 10px rgba(255,20,147,.5); }
+        .step-item.done  .step-circle { border-color:var(--cyan); background:var(--cyan); color:#000; }
+        .step-lbl { font-size:.6rem; letter-spacing:1px; color:var(--gray); }
+        .step-item.active .step-lbl { color:var(--pink); }
+        .step-item.done  .step-lbl { color:var(--cyan); }
+
+        .modal-title { font-family:'Bebas Neue',cursive; font-size:2rem; letter-spacing:3px; margin-bottom:5px; }
+        .modal-sub { color:var(--gray); font-size:.82rem; letter-spacing:2px; margin-bottom:26px; }
+
+        /* Summary bar */
+        .summary-bar {
+            background:var(--dark3); border-left:3px solid var(--pink);
+            padding:14px 16px; margin-bottom:22px;
+            display:flex; justify-content:space-between; align-items:center;
+        }
+        .summary-bar-name { font-family:'Bebas Neue',cursive; font-size:1.15rem; letter-spacing:2px; }
+        .summary-bar-detail { font-size:.72rem; color:var(--gray); letter-spacing:1px; }
+        .summary-bar-price { font-family:'Orbitron',monospace; font-size:1.1rem; font-weight:700; }
+
+        /* Form */
+        .form-group { margin-bottom:18px; }
+        .form-label { display:block; font-size:.72rem; letter-spacing:2px; color:var(--gray); margin-bottom:7px; text-transform:uppercase; }
+        .form-input {
+            width:100%; background:var(--dark3); border:1px solid rgba(255,255,255,.1);
+            color:var(--white); padding:12px 14px;
+            font-family:'Rajdhani',sans-serif; font-size:1rem; font-weight:600;
+            outline:none; transition:border-color .3s;
+        }
+        .form-input:focus { border-color:var(--pink); }
+        .form-input::placeholder { color:rgba(255,255,255,.18); }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+        .err-msg { color:#ff4444; font-size:.75rem; letter-spacing:1px; margin-top:4px; display:none; }
+
+        /* Payment methods */
+        .pay-methods { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+        .pay-method {
+            background:var(--dark3); border:2px solid rgba(255,255,255,.08);
+            padding:18px 12px; cursor:pointer; transition:all .3s;
+            text-align:center; display:flex; flex-direction:column; align-items:center; gap:7px;
+        }
+        .pay-method:hover { border-color:rgba(255,255,255,.25); }
+        .pay-method.selected-mtn  { border-color:var(--yellow); background:rgba(255,215,0,.06); }
+        .pay-method.selected-orange { border-color:var(--orange); background:rgba(255,102,0,.06); }
+        .pay-icon { font-size:2.2rem; }
+        .pay-name { font-family:'Orbitron',monospace; font-size:.65rem; letter-spacing:2px; font-weight:700; }
+        .mtn-label   { color:var(--yellow); }
+        .orange-label{ color:var(--orange); }
+        .pay-sub { font-size:.65rem; color:var(--gray); letter-spacing:.8px; }
+
+        /* Buttons */
+        .btn-submit {
+            width:100%; background:linear-gradient(135deg,var(--pink),var(--purple));
+            color:#fff; border:none; padding:16px;
+            font-family:'Bebas Neue',cursive; font-size:1.25rem; letter-spacing:3px;
+            cursor:pointer; transition:all .3s; margin-top:6px;
+        }
+        .btn-submit:hover { opacity:.9; box-shadow:0 4px 22px rgba(255,20,147,.42); }
+        .btn-back {
+            width:100%; background:transparent; color:var(--gray); border:none;
+            padding:10px; font-family:'Rajdhani',sans-serif; font-size:.9rem;
+            cursor:pointer; letter-spacing:1px; margin-top:6px; transition:color .2s;
+        }
+        .btn-back:hover { color:var(--white); }
+
+        /* Processing */
+        .proc-wrap { text-align:center; padding:40px 0; }
+        .spinner {
+            width:58px; height:58px; border:3px solid rgba(255,20,147,.2);
+            border-top-color:var(--pink); border-radius:50%;
+            animation:spin-fast .8s linear infinite; margin:0 auto 24px;
+        }
+        @keyframes spin-fast { to{transform:rotate(360deg);} }
+        .proc-title { font-family:'Bebas Neue',cursive; font-size:1.8rem; letter-spacing:3px; margin-bottom:8px; }
+        .proc-sub { color:var(--gray); font-size:.88rem; letter-spacing:1px; }
+        .proc-steps { margin-top:26px; text-align:left; }
+        .proc-step { display:flex; align-items:center; gap:12px; padding:8px 0; opacity:.25; transition:opacity .5s; font-size:.9rem; }
+        .proc-step.ps-active { opacity:1; color:var(--cyan); }
+        .proc-step.ps-done  { opacity:.65; color:var(--green); }
+
+        /* Confirmation / Ticket */
+        .confirm-wrap { text-align:center; }
+        .success-ico { font-size:4rem; margin-bottom:14px; animation:pop .5s ease-out; }
+        @keyframes pop { 0%{transform:scale(0);opacity:0;} 70%{transform:scale(1.2);} 100%{transform:scale(1);opacity:1;} }
+
+        .ticket-preview {
+            background:#000; border:2px solid var(--pink);
+            padding:22px; margin:22px 0; text-align:left;
+            position:relative; overflow:hidden;
+        }
+        .ticket-preview::before {
+            content:''; position:absolute; top:0; left:0; right:0; height:3px;
+            background:linear-gradient(90deg,var(--pink),var(--purple),var(--cyan),var(--yellow),var(--pink));
+        }
+        .tp-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
+        .tp-event { font-family:'Bebas Neue',cursive; font-size:1.7rem; letter-spacing:3px; line-height:1; }
+        .tp-sub-event { font-size:.7rem; color:var(--gray); letter-spacing:2px; }
+        .tp-cat {
+            display:inline-block; padding:3px 12px; margin-top:5px;
+            font-family:'Orbitron',monospace; font-size:.65rem; letter-spacing:2px;
+        }
+        .tp-cat-classic { background:rgba(0,255,255,.1); color:var(--cyan); border:1px solid var(--cyan); }
+        .tp-cat-vip     { background:rgba(255,20,147,.1); color:var(--pink); border:1px solid var(--pink); }
+        .tp-body { display:grid; grid-template-columns:1fr auto; gap:14px; align-items:center; }
+        .tp-info-row { margin-bottom:9px; }
+        .tp-lbl { font-size:.62rem; letter-spacing:2px; color:var(--gray); text-transform:uppercase; }
+        .tp-val { font-size:.98rem; font-weight:700; letter-spacing:.8px; }
+        .tp-qr-wrap { display:flex; flex-direction:column; align-items:center; gap:5px; }
+        .tp-qr-box { background:#fff; padding:5px; width:88px; height:88px; }
+        .tp-qr-box canvas, .tp-qr-box img { width:78px !important; height:78px !important; }
+        .tp-qr-lbl { font-size:.52rem; letter-spacing:1px; color:var(--gray); text-align:center; line-height:1.4; }
+        .tp-id {
+            font-family:'Orbitron',monospace; font-size:.6rem; color:var(--gray); letter-spacing:2px;
+            margin-top:12px; padding-top:10px; border-top:1px dashed rgba(255,255,255,.1);
+        }
+        .tp-deco { position:absolute; font-size:7rem; opacity:.03; bottom:-15px; right:8px; font-family:'Bebas Neue',cursive; }
+        .tp-qty-badge {
+            position:absolute; top:12px; right:14px;
+            background:var(--yellow); color:#000;
+            font-family:'Orbitron',monospace; font-size:.58rem; font-weight:700;
+            padding:3px 10px; letter-spacing:1px;
+        }
+
+        .confirm-actions { display:flex; gap:10px; flex-direction:column; }
+        .btn-dl {
+            background:linear-gradient(135deg,var(--pink),var(--purple)); color:#fff;
+            border:none; padding:14px;
+            font-family:'Bebas Neue',cursive; font-size:1.2rem; letter-spacing:3px;
+            cursor:pointer; transition:all .3s;
+            display:flex; align-items:center; justify-content:center; gap:8px;
+        }
+        .btn-dl:hover { opacity:.9; transform:translateY(-2px); box-shadow:0 4px 22px rgba(255,20,147,.42); }
+        .btn-close-m {
+            background:transparent; color:var(--gray);
+            border:1px solid rgba(255,255,255,.1); padding:11px;
+            font-family:'Rajdhani',sans-serif; font-size:.95rem;
+            cursor:pointer; transition:all .3s; letter-spacing:2px;
+        }
+        .btn-close-m:hover { border-color:var(--gray); color:var(--white); }
+
+        /* ── RESPONSIVE ── */
+        @media(max-width:520px){
+            nav { padding:12px 16px; }
+            .nav-links .nav-link { display:none; }
+            .modal { padding:28px 18px; }
+            .form-row { grid-template-columns:1fr; }
+            .tp-body { grid-template-columns:1fr; }
+            .tp-qr-wrap { flex-direction:row; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+    <div class="nav-logo neon-pink">NOSTALGIA<span style="color:var(--cyan)">NIGHT</span></div>
+    <div class="nav-links">
+        <button class="nav-link" onclick="document.getElementById('tickets').scrollIntoView({behavior:'smooth'})">LES PASS</button>
+        <button class="nav-link" onclick="document.getElementById('my-tickets').scrollIntoView({behavior:'smooth'})">MES BILLETS</button>
+        <button class="nav-btn" onclick="openModal()">🎫 ACHETER</button>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-bg"></div>
+    <span class="deco-icon r">📼</span>
+    <span class="deco-icon l">🎵</span>
+    <span class="deco-smiley">😊</span>
+    <div class="float-badge tr">THE 90'S VIBES</div>
+    <div class="float-badge tl">NOSTALGIA NIGHT</div>
+
+    <div style="position:relative;z-index:1;">
+        <div class="hero-date">18 JUILLET 2026</div>
+        <p class="hero-subtitle">SOIRÉE ANNÉES 90</p>
+        <h1 class="hero-title">
+            <span class="hero-title-main">NOSTALGIA</span>
+            <span class="hero-title-night">NIGHT</span>
+        </h1>
+        <div class="hero-location">📍 <span>YAOUNDÉ</span> — ODZA</div>
+        <p class="hero-desc">UNE NUIT INOUBLIABLE · OPEN BAR · FOOD · HITS 90'S</p>
+        <div class="hero-btns">
+            <button class="btn-primary" onclick="openModal()">🎫 RÉSERVER MON BILLET</button>
+            <button class="btn-secondary" onclick="document.getElementById('tickets').scrollIntoView({behavior:'smooth'})">VOIR LES PASS</button>
+        </div>
+    </div>
+</section>
+
+<!-- COUNTDOWN -->
+<div class="countdown-section">
+    <p class="countdown-label">L'ÉVÉNEMENT COMMENCE DANS</p>
+    <div class="countdown">
+        <div class="cd-item"><div class="cd-num" id="cd-d">--</div><div class="cd-unit">JOURS</div></div>
+        <div class="cd-sep">:</div>
+        <div class="cd-item"><div class="cd-num" id="cd-h">--</div><div class="cd-unit">HEURES</div></div>
+        <div class="cd-sep">:</div>
+        <div class="cd-item"><div class="cd-num" id="cd-m">--</div><div class="cd-unit">MINUTES</div></div>
+        <div class="cd-sep">:</div>
+        <div class="cd-item"><div class="cd-num" id="cd-s">--</div><div class="cd-unit">SECONDES</div></div>
+    </div>
+</div>
+
+<!-- INFO BAR -->
+<div class="info-bar">
+    <div class="info-grid">
+        <div><div class="info-icon">📅</div><div class="info-label">DATE</div><div class="info-value neon-cyan">18 JUILLET 2026</div></div>
+        <div><div class="info-icon">📍</div><div class="info-label">LIEU</div><div class="info-value neon-pink">YAOUNDÉ, ODZA</div></div>
+        <div><div class="info-icon">🎶</div><div class="info-label">AMBIANCE</div><div class="info-value neon-yellow">HITS 90'S</div></div>
+        <div><div class="info-icon">📞</div><div class="info-label">RÉSERVATIONS</div><div class="info-value" style="font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;">+237 6 99 58 43 55</div></div>
+    </div>
+</div>
+
+<!-- TICKETS -->
+<section class="tickets-section" id="tickets">
+    <h2 class="section-title neon-pink">CHOISISSEZ VOTRE PASS</h2>
+    <div class="section-div"></div>
+    <p style="color:var(--gray);letter-spacing:2px;font-size:.88rem;">DEUX OPTIONS POUR VIVRE LA NUIT À FOND</p>
+    <div class="tickets-grid">
+
+        <!-- CLASSIC -->
+        <div class="ticket-card classic" onclick="openModal('CLASSIC')">
+            <span class="ticket-badge">PASS</span>
+            <div class="ticket-name neon-cyan">CLASSIC</div>
+            <div class="ticket-price neon-cyan">5 000</div>
+            <div class="ticket-currency">FCFA PAR PERSONNE</div>
+            <hr class="ticket-divider">
+            <ul class="ticket-perks">
+                <li>Entrée à l'événement</li>
+                <li>1 boisson offerte</li>
+                <li>Accès dancefloor</li>
+                <li>Billet numérique + QR Code</li>
+            </ul>
+            <button class="ticket-cta">RÉSERVER MAINTENANT</button>
+        </div>
+
+        <!-- VIP -->
+        <div class="ticket-card vip" onclick="openModal('VIP')">
+            <div class="popular-badge">⭐ POPULAIRE</div>
+            <div class="vip-crown">👑</div>
+            <span class="ticket-badge">PASS</span>
+            <div class="ticket-name neon-pink">VIP</div>
+            <div class="ticket-price neon-pink">8 000</div>
+            <div class="ticket-currency">FCFA PAR PERSONNE</div>
+            <hr class="ticket-divider">
+            <ul class="ticket-perks">
+                <li>Entrée prioritaire</li>
+                <li>1 plat offert</li>
+                <li>1 boisson offerte</li>
+                <li>Zone VIP réservée</li>
+                <li>Billet numérique + QR Code</li>
+            </ul>
+            <button class="ticket-cta">RÉSERVER VIP</button>
+        </div>
+
+    </div>
+</section>
+
+<!-- MY TICKETS -->
+<section class="my-tickets-section" id="my-tickets">
+    <h2 class="section-title">MES <span class="neon-cyan">BILLETS</span></h2>
+    <div class="section-div"></div>
+    <div class="my-tickets-grid" id="tickets-list"></div>
+</section>
+
+<!-- SCANNER BANNER -->
+<div class="scanner-banner">
+    <div class="scanner-inner">
+        <div class="scanner-text">
+            <strong>📷 SCANNER DE BILLETS — STAFF SEULEMENT</strong>
+            Outil de validation des billets à l'entrée de l'événement
+        </div>
+        <button class="btn-outline" onclick="window.open('scanner.html','_blank')">OUVRIR LE SCANNER →</button>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-title neon-pink">NOSTALGIA NIGHT</div>
+    <p style="color:var(--gray);letter-spacing:3px;font-size:.78rem;margin-bottom:22px;">SOIRÉE ANNÉES 90 · 18 JUILLET 2026 · YAOUNDÉ</p>
+    <div class="footer-contacts">
+        <div class="footer-contact">📞 +237 6 99 58 43 55</div>
+        <div class="footer-contact">📞 +237 6 59 27 95 93</div>
+    </div>
+    <p class="footer-bottom">© 2026 NOSTALGIA NIGHT · TOUS DROITS RÉSERVÉS</p>
+</footer>
+
+
+<!-- ════════════════════════════════
+     MODAL D'ACHAT
+════════════════════════════════ -->
+<div class="modal-overlay" id="purchase-modal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+
+        <!-- Étapes -->
+        <div class="steps">
+            <div class="step-item active" id="si-1">
+                <div class="step-circle">1</div><div class="step-lbl">INFO</div>
+            </div>
+            <div class="step-item" id="si-2">
+                <div class="step-circle">2</div><div class="step-lbl">PAIEMENT</div>
+            </div>
+            <div class="step-item" id="si-3">
+                <div class="step-circle">3</div><div class="step-lbl">BILLET</div>
+            </div>
+        </div>
+
+        <!-- ── ÉTAPE 1 : Infos personnelles ── -->
+        <div id="step1">
+            <h2 class="modal-title">VOS <span class="neon-pink">INFORMATIONS</span></h2>
+            <p class="modal-sub">REMPLISSEZ VOS COORDONNÉES</p>
+
+            <div class="summary-bar">
+                <div>
+                    <div class="summary-bar-name" id="sb-name">PASS CLASSIC</div>
+                    <div class="summary-bar-detail">NOSTALGIA NIGHT · 18 JUILLET 2026</div>
+                </div>
+                <div class="summary-bar-price neon-pink" id="sb-price">5 000 FCFA</div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Prénom *</label>
+                    <input class="form-input" id="f-prenom" type="text" placeholder="Jean">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nom *</label>
+                    <input class="form-input" id="f-nom" type="text" placeholder="Dupont">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email *</label>
+                <input class="form-input" id="f-email" type="email" placeholder="jean@exemple.com">
+                <div class="err-msg" id="e-email">Adresse email invalide</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Téléphone *</label>
+                <input class="form-input" id="f-phone" type="tel" placeholder="6XX XXX XXX">
+                <div class="err-msg" id="e-phone">Numéro invalide (9 chiffres minimum)</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Quantité de billets</label>
+                <select class="form-input" id="f-qty" onchange="updateQtyTotal()">
+                    <option value="1">1 billet</option>
+                    <option value="2">2 billets</option>
+                    <option value="3">3 billets</option>
+                    <option value="4">4 billets</option>
+                    <option value="5">5 billets</option>
+                </select>
+            </div>
+            <button class="btn-submit" onclick="step1Next()">CONTINUER →</button>
+        </div>
+
+        <!-- ── ÉTAPE 2 : Paiement ── -->
+        <div id="step2" style="display:none;">
+            <h2 class="modal-title">MODE DE <span class="neon-yellow">PAIEMENT</span></h2>
+            <p class="modal-sub">CHOISISSEZ VOTRE OPÉRATEUR MOBILE</p>
+
+            <div class="summary-bar">
+                <div>
+                    <div class="summary-bar-name" id="sb2-name">PASS CLASSIC</div>
+                    <div class="summary-bar-detail" id="sb2-detail">1 billet · NOSTALGIA NIGHT</div>
+                </div>
+                <div class="summary-bar-price neon-pink" id="sb2-total">5 000 FCFA</div>
+            </div>
+
+            <div class="pay-methods">
+                <div class="pay-method" id="pm-mtn" onclick="pickPayment('MTN')">
+                    <div class="pay-icon">🟡</div>
+                    <div class="pay-name mtn-label">MTN MOMO</div>
+                    <div class="pay-sub">Mobile Money</div>
+                </div>
+                <div class="pay-method" id="pm-orange" onclick="pickPayment('ORANGE')">
+                    <div class="pay-icon">🟠</div>
+                    <div class="pay-name orange-label">ORANGE MONEY</div>
+                    <div class="pay-sub">Mobile Money</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" id="pay-phone-lbl">NUMÉRO DE PAIEMENT *</label>
+                <input class="form-input" id="f-pay-phone" type="tel" placeholder="6XX XXX XXX">
+                <div style="font-size:.72rem;color:var(--gray);margin-top:6px;letter-spacing:.8px;">
+                    💡 Vous recevrez une notification sur votre téléphone pour confirmer
+                </div>
+            </div>
+            <div class="err-msg" id="e-pay" style="margin-bottom:12px;">Sélectionnez un opérateur et entrez votre numéro</div>
+
+            <button class="btn-submit" onclick="step2Pay()">PAYER MAINTENANT →</button>
+            <button class="btn-back" onclick="showStep(1)">← RETOUR</button>
+        </div>
+
+        <!-- ── TRAITEMENT ── -->
+        <div id="step-proc" style="display:none;">
+            <div class="proc-wrap">
+                <div class="spinner"></div>
+                <div class="proc-title">PAIEMENT EN <span class="neon-pink">COURS</span></div>
+                <p class="proc-sub">Ne fermez pas cette page...</p>
+                <div class="proc-steps">
+                    <div class="proc-step" id="ps1">⏳ Initialisation de la transaction...</div>
+                    <div class="proc-step" id="ps2">📱 Envoi de la notification USSD...</div>
+                    <div class="proc-step" id="ps3">✅ Confirmation du paiement reçue...</div>
+                    <div class="proc-step" id="ps4">🎫 Génération de votre billet numérique...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── ÉTAPE 3 : Billet ── -->
+        <div id="step3" style="display:none;">
+            <div class="confirm-wrap">
+                <div class="success-ico">🎉</div>
+                <h2 class="modal-title">PAIEMENT <span class="neon-cyan">CONFIRMÉ !</span></h2>
+                <p style="color:var(--gray);letter-spacing:1px;font-size:.88rem;margin-bottom:22px;">
+                    Votre billet a été généré. Téléchargez-le et présentez le QR Code à l'entrée.
+                </p>
+
+                <!-- Aperçu du billet -->
+                <div class="ticket-preview" id="ticket-display">
+                    <div style="position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 12px,rgba(255,255,255,.004) 12px,rgba(255,255,255,.004) 24px);pointer-events:none;"></div>
+                    <div id="tp-qty-badge" class="tp-qty-badge" style="display:none;"></div>
+
+                    <div class="tp-header">
+                        <div>
+                            <div class="tp-event">NOSTALGIA NIGHT</div>
+                            <div class="tp-sub-event">SOIRÉE ANNÉES 90</div>
+                            <div class="tp-cat" id="tp-cat">CLASSIC</div>
+                        </div>
+                    </div>
+
+                    <div class="tp-body">
+                        <div>
+                            <div class="tp-info-row">
+                                <div class="tp-lbl">TITULAIRE</div>
+                                <div class="tp-val" id="tp-holder">—</div>
+                            </div>
+                            <div class="tp-info-row">
+                                <div class="tp-lbl">DATE</div>
+                                <div class="tp-val">18 JUILLET 2026</div>
+                            </div>
+                            <div class="tp-info-row">
+                                <div class="tp-lbl">LIEU</div>
+                                <div class="tp-val">YAOUNDÉ, ODZA</div>
+                            </div>
+                            <div class="tp-info-row">
+                                <div class="tp-lbl">INCLUS</div>
+                                <div class="tp-val" id="tp-perks">—</div>
+                            </div>
+                        </div>
+                        <div class="tp-qr-wrap">
+                            <div class="tp-qr-box" id="qr-box"></div>
+                            <div class="tp-qr-lbl">SCANNER<br>À L'ENTRÉE</div>
+                        </div>
+                    </div>
+
+                    <div class="tp-id">N° BILLET : <span id="tp-id">—</span></div>
+                    <div class="tp-deco">90'S</div>
+                </div>
+
+                <div class="confirm-actions">
+                    <button class="btn-dl" onclick="downloadPDF()">⬇️ TÉLÉCHARGER LE BILLET (PDF)</button>
+                    <button class="btn-close-m" onclick="closeModal()">FERMER</button>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /modal -->
+</div><!-- /overlay -->
+
+
+<script>
+// ════════════════════════════════
+// CONFIG
+// ════════════════════════════════
+const API = '';  // même origine que le serveur Express
+
+const TICKETS = {
+    CLASSIC: { name:'PASS CLASSIC', price:5000, perks:'1 BOISSON OFFERTE' },
+    VIP:     { name:'PASS VIP',     price:8000, perks:'1 PLAT + 1 BOISSON OFFERTS' }
+};
+
+const ST = {
+    ticket:   'CLASSIC',
+    payment:  null,
+    orderId:  null,
+    ticketIds: [],
+    simulated: false
+};
+
+// ════════════════════════════════
+// COUNTDOWN
+// ════════════════════════════════
+function tick() {
+    const target = new Date('2026-07-18T20:00:00');
+    const diff = target - new Date();
+    if (diff <= 0) { ['d','h','m','s'].forEach(id => document.getElementById('cd-'+id).textContent='00'); return; }
+    const d = Math.floor(diff/86400000),
+          h = Math.floor(diff%86400000/3600000),
+          m = Math.floor(diff%3600000/60000),
+          s = Math.floor(diff%60000/1000);
+    document.getElementById('cd-d').textContent = String(d).padStart(2,'0');
+    document.getElementById('cd-h').textContent = String(h).padStart(2,'0');
+    document.getElementById('cd-m').textContent = String(m).padStart(2,'0');
+    document.getElementById('cd-s').textContent = String(s).padStart(2,'0');
+}
+setInterval(tick,1000); tick();
+
+// ════════════════════════════════
+// MODAL OPEN / CLOSE
+// ════════════════════════════════
+function openModal(ticket) {
+    if (ticket) ST.ticket = ticket;
+    refreshSummary();
+    document.getElementById('purchase-modal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    showStep(1);
+}
+
+function closeModal() {
+    document.getElementById('purchase-modal').classList.remove('active');
+    document.body.style.overflow = '';
+    ST.payment = null;
+    document.getElementById('pm-mtn').className    = 'pay-method';
+    document.getElementById('pm-orange').className = 'pay-method';
+    document.getElementById('e-pay').style.display = 'none';
+    // reset proc steps
+    ['ps1','ps2','ps3','ps4'].forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.remove('ps-active','ps-done');
+    });
+}
+
+document.getElementById('purchase-modal').addEventListener('click', function(e){
+    if (e.target === this) closeModal();
+});
+
+// ════════════════════════════════
+// SHOW STEP
+// ════════════════════════════════
+function showStep(n) {
+    ['step1','step2','step-proc','step3'].forEach(id =>
+        document.getElementById(id).style.display = 'none'
+    );
+    const map = {1:'step1', 2:'step2', 'p':'step-proc', 3:'step3'};
+    document.getElementById(map[n]).style.display = 'block';
+
+    const num = typeof n === 'number' ? n : 3;
+    for (let i=1; i<=3; i++) {
+        const el = document.getElementById('si-'+i);
+        el.classList.remove('active','done');
+        if (i < num) el.classList.add('done');
+        else if (i === num) el.classList.add('active');
+    }
+}
+
+// ════════════════════════════════
+// SUMMARY UPDATE
+// ════════════════════════════════
+function refreshSummary() {
+    const t = TICKETS[ST.ticket];
+    document.getElementById('sb-name').textContent  = t.name;
+    document.getElementById('sb-price').textContent = fmt(t.price) + ' FCFA';
+    updateQtyTotal();
+}
+
+function updateQtyTotal() {
+    const qty = parseInt(document.getElementById('f-qty').value || 1);
+    const t = TICKETS[ST.ticket];
+    document.getElementById('sb-price').textContent = fmt(t.price * qty) + ' FCFA';
+}
+
+function fmt(n) { return n.toLocaleString('fr-FR'); }
+
+// ════════════════════════════════
+// STEP 1 → 2  (crée la commande côté serveur)
+// ════════════════════════════════
+async function step1Next() {
+    const prenom = document.getElementById('f-prenom').value.trim();
+    const nom    = document.getElementById('f-nom').value.trim();
+    const email  = document.getElementById('f-email').value.trim();
+    const phone  = document.getElementById('f-phone').value.trim();
+    const qty    = parseInt(document.getElementById('f-qty').value);
+
+    let ok = true;
+    document.getElementById('f-prenom').style.borderColor = prenom ? '' : 'red';
+    document.getElementById('f-nom').style.borderColor    = nom    ? '' : 'red';
+    if (!prenom || !nom) ok = false;
+
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    document.getElementById('e-email').style.display = emailOk ? 'none' : 'block';
+    if (!emailOk) ok = false;
+
+    const phoneOk = /^\d{9,}$/.test(phone.replace(/\s/g,''));
+    document.getElementById('e-phone').style.display = phoneOk ? 'none' : 'block';
+    if (!phoneOk) ok = false;
+
+    if (!ok) return;
+
+    const btn = document.querySelector('#step1 .btn-submit');
+    btn.textContent = 'CHARGEMENT...'; btn.disabled = true;
+
+    try {
+        const res  = await fetch(API + '/api/tickets/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prenom, nom, email, phone,
+                                   category: ST.ticket, qty,
+                                   payment_method: 'MTN',
+                                   payment_phone: phone })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Erreur serveur');
+
+        ST.orderId = data.orderId;
+        const t = TICKETS[ST.ticket];
+        document.getElementById('sb2-name').textContent   = t.name;
+        document.getElementById('sb2-detail').textContent = qty + ' billet(s) · NOSTALGIA NIGHT';
+        document.getElementById('sb2-total').textContent  = fmt(t.price * qty) + ' FCFA';
+        document.getElementById('f-pay-phone').value      = phone;
+        showStep(2);
+    } catch(err) {
+        alert('Erreur : ' + err.message);
+    } finally {
+        btn.textContent = 'CONTINUER →'; btn.disabled = false;
+    }
+}
+
+// ════════════════════════════════
+// STEP 2 : Paiement
+// ════════════════════════════════
+function pickPayment(method) {
+    ST.payment = method;
+    document.getElementById('pm-mtn').className    = 'pay-method' + (method==='MTN'    ? ' selected-mtn'    : '');
+    document.getElementById('pm-orange').className = 'pay-method' + (method==='ORANGE' ? ' selected-orange' : '');
+    document.getElementById('pay-phone-lbl').textContent =
+        method === 'MTN' ? 'NUMERO MTN MOMO *' : 'NUMERO ORANGE MONEY *';
+    document.getElementById('e-pay').style.display = 'none';
+}
+
+async function step2Pay() {
+    const payPhone = document.getElementById('f-pay-phone').value.trim();
+    if (!ST.payment || !/^\d{9,}$/.test(payPhone.replace(/\s/g,''))) {
+        document.getElementById('e-pay').style.display = 'block';
+        return;
+    }
+    document.getElementById('e-pay').style.display = 'none';
+
+    const btn = document.querySelector('#step2 .btn-submit');
+    btn.textContent = 'TRAITEMENT...'; btn.disabled = true;
+
+    try {
+        const res  = await fetch(API + '/api/payment/initiate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: ST.orderId, method: ST.payment })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Erreur paiement');
+
+        ST.simulated  = data.simulated || false;
+        ST.paymentRef = data.payment_ref;
+
+        // Orange Money renvoie une URL de redirection
+        if (data.payment_url) { window.location.href = data.payment_url; return; }
+
+        runPaymentAnim();
+    } catch(err) {
+        alert('Erreur paiement : ' + err.message);
+        btn.textContent = 'PAYER MAINTENANT'; btn.disabled = false;
+    }
+}
+
+function runPaymentAnim() {
+    showStep('p');
+    const ids = ['ps1','ps2','ps3','ps4'];
+    let i = 0;
+    function nextAnim() {
+        if (i > 0) {
+            document.getElementById(ids[i-1]).classList.remove('ps-active');
+            document.getElementById(ids[i-1]).classList.add('ps-done');
+        }
+        if (i < ids.length) {
+            document.getElementById(ids[i]).classList.add('ps-active');
+            i++;
+            setTimeout(nextAnim, 900);
+        } else {
+            setTimeout(confirmOrder, 400);
+        }
+    }
+    nextAnim();
+}
+
+// ════════════════════════════════
+// CONFIRMER LA COMMANDE
+// ════════════════════════════════
+async function confirmOrder() {
+    try {
+        if (!ST.simulated) {
+            const statusRes  = await fetch(API + '/api/payment/status/' + ST.orderId);
+            const statusData = await statusRes.json();
+            if (statusData.status !== 'paid') { pollPaymentStatus(); return; }
+        }
+
+        const res  = await fetch(API + '/api/tickets/confirm/' + ST.orderId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ payment_ref: ST.paymentRef || 'SIM-' + Date.now() })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        ST.ticketIds = data.tickets;
+        buildTicketPreview();
+    } catch(err) {
+        showStep(2);
+        alert('Erreur confirmation : ' + err.message);
+    }
+}
+
+async function pollPaymentStatus(attempts) {
+    attempts = attempts || 0;
+    if (attempts > 30) { showStep(2); alert('Delai depasse. Verifiez votre telephone et reessayez.'); return; }
+    await new Promise(r => setTimeout(r, 2000));
+    const res  = await fetch(API + '/api/payment/status/' + ST.orderId);
+    const data = await res.json();
+    if (data.status === 'paid')   { confirmOrder(); }
+    else if (data.status === 'failed') { showStep(2); alert('Paiement refuse. Veuillez reessayer.'); }
+    else { pollPaymentStatus(attempts + 1); }
+}
+
+// ════════════════════════════════
+// APERCU DU BILLET
+// ════════════════════════════════
+function buildTicketPreview() {
+    const prenom = document.getElementById('f-prenom').value.trim();
+    const nom    = document.getElementById('f-nom').value.trim();
+    const qty    = parseInt(document.getElementById('f-qty').value);
+    const t      = TICKETS[ST.ticket];
+    const firstId = ST.ticketIds[0];
+
+    document.getElementById('tp-holder').textContent = (prenom + ' ' + nom).toUpperCase();
+    document.getElementById('tp-perks').textContent  = t.perks;
+    document.getElementById('tp-id').textContent     = firstId + (ST.ticketIds.length > 1 ? ' (+' + (ST.ticketIds.length - 1) + ')' : '');
+
+    const catEl = document.getElementById('tp-cat');
+    catEl.textContent = 'PASS ' + ST.ticket;
+    catEl.className   = 'tp-cat tp-cat-' + ST.ticket.toLowerCase();
+
+    if (qty > 1) {
+        document.getElementById('tp-qty-badge').textContent = 'x' + qty;
+        document.getElementById('tp-qty-badge').style.display = 'block';
+    } else {
+        document.getElementById('tp-qty-badge').style.display = 'none';
+    }
+
+    // QR Code apercu client
+    const qrBox = document.getElementById('qr-box');
+    qrBox.innerHTML = '';
+    new QRCode(qrBox, {
+        text: JSON.stringify({ id: firstId, nom: (prenom + ' ' + nom).toUpperCase(),
+                               cat: ST.ticket, event: 'NOSTALGIA-NIGHT-2026' }),
+        width: 78, height: 78,
+        colorDark: '#000000', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+    });
+
+    // Sauvegarder dans localStorage
+    saveToHistory({ orderId: ST.orderId, ticketIds: ST.ticketIds,
+                    prenom, nom, category: ST.ticket, qty,
+                    date: new Date().toLocaleString('fr-FR') });
+    showStep(3);
+}
+
+// ════════════════════════════════
+// TELECHARGER PDF (via serveur)
+// ════════════════════════════════
+function downloadPDF() {
+    ST.ticketIds.forEach(function(id) {
+        var a = document.createElement('a');
+        a.href     = API + '/api/tickets/download/' + id;
+        a.target   = '_blank';
+        a.download = 'billet-nostalgia-night-' + id + '.pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    });
+}
+
+// ════════════════════════════════
+// HISTORIQUE LOCAL
+// ════════════════════════════════
+function saveToHistory(entry) {
+    const list = JSON.parse(localStorage.getItem('nn_orders') || '[]');
+    list.push(entry);
+    localStorage.setItem('nn_orders', JSON.stringify(list));
+    renderMyTickets();
+}
+
+function renderMyTickets() {
+    const list = JSON.parse(localStorage.getItem('nn_orders') || '[]');
+    const container = document.getElementById('tickets-list');
+    if (!list.length) {
+        container.innerHTML = '<div class="empty-tickets">Vous n\'avez pas encore de billet.<br>Achetez votre pass ci-dessus !</div>';
+        return;
+    }
+    container.innerHTML = [...list].reverse().map(function(entry, ri) {
+        const realIdx = list.length - 1 - ri;
+        const isVIP   = entry.category === 'VIP';
+        const extra   = entry.ticketIds.length > 1 ? ' (+' + (entry.ticketIds.length - 1) + ')' : '';
+        return '<div class="saved-ticket">' +
+            '<div>' +
+            '<div class="saved-ticket-name ' + (isVIP ? 'neon-pink' : 'neon-cyan') + '">' +
+            (isVIP ? '👑 ' : '') + TICKETS[entry.category].name + '</div>' +
+            '<div class="saved-ticket-details">' +
+            entry.prenom + ' ' + entry.nom.toUpperCase() + ' · ' + entry.qty + ' billet(s)' +
+            ' · ' + entry.ticketIds[0] + extra + ' · ' + entry.date +
+            '</div></div>' +
+            '<div class="saved-ticket-actions">' +
+            '<button class="btn-sm btn-sm-pink" onclick="redownload(' + realIdx + ')">PDF</button>' +
+            '<button class="btn-sm btn-sm-red"  onclick="deleteEntry(' + realIdx + ')">X</button>' +
+            '</div></div>';
+    }).join('');
+}
+
+function redownload(idx) {
+    const list  = JSON.parse(localStorage.getItem('nn_orders') || '[]');
+    const entry = list[idx];
+    if (!entry) return;
+    entry.ticketIds.forEach(function(id) {
+        window.open(API + '/api/tickets/download/' + id, '_blank');
+    });
+}
+
+function deleteEntry(idx) {
+    if (!confirm('Supprimer cet enregistrement ?')) return;
+    const list = JSON.parse(localStorage.getItem('nn_orders') || '[]');
+    list.splice(idx, 1);
+    localStorage.setItem('nn_orders', JSON.stringify(list));
+    renderMyTickets();
+}
+
+// Init
+renderMyTickets();
+</script>
+</body>
+</html>

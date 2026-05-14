@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOSTALGIA NIGHT — Confirmation de paiement</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --pink:#FF1493; --cyan:#00FFFF; --yellow:#FFD700; --green:#00FF41; --red:#FF3333; --dark:#050505; --dark2:#0f0f0f; --gray:#888; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:var(--dark); color:#fff; font-family:'Rajdhani',sans-serif; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; }
+        body::before { content:''; position:fixed; inset:0; background-image:linear-gradient(rgba(255,20,147,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,20,147,.02) 1px,transparent 1px); background-size:40px 40px; pointer-events:none; }
+        .card { background:var(--dark2); border:2px solid rgba(255,255,255,.08); padding:48px 36px; max-width:520px; width:100%; text-align:center; position:relative; z-index:1; }
+        .icon { font-size:4rem; margin-bottom:16px; }
+        h1 { font-family:'Bebas Neue',cursive; font-size:2.5rem; letter-spacing:4px; margin-bottom:8px; }
+        .sub { color:var(--gray); font-size:.9rem; letter-spacing:2px; margin-bottom:32px; }
+        .loading { display:flex; flex-direction:column; align-items:center; gap:16px; }
+        .spinner { width:48px; height:48px; border:3px solid rgba(255,20,147,.2); border-top-color:var(--pink); border-radius:50%; animation:spin .8s linear infinite; }
+        @keyframes spin { to{transform:rotate(360deg);} }
+        .ticket-list { display:flex; flex-direction:column; gap:10px; margin:24px 0; }
+        .ticket-row { background:rgba(0,0,0,.4); border-left:3px solid var(--pink); padding:12px 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+        .ticket-id { font-family:'Orbitron',monospace; font-size:.72rem; letter-spacing:1px; color:var(--gray); }
+        .ticket-cat { font-family:'Bebas Neue',cursive; font-size:1.1rem; letter-spacing:2px; }
+        .cat-vip     { color:var(--pink); }
+        .cat-classic { color:var(--cyan); }
+        .btn { display:block; width:100%; padding:14px; border:none; font-family:'Bebas Neue',cursive; font-size:1.2rem; letter-spacing:3px; cursor:pointer; transition:all .3s; margin-top:10px; text-decoration:none; text-align:center; }
+        .btn-pink    { background:linear-gradient(135deg,var(--pink),#9B59B6); color:#fff; }
+        .btn-pink:hover { opacity:.9; transform:translateY(-2px); }
+        .btn-outline { background:transparent; color:var(--gray); border:1px solid rgba(255,255,255,.15); }
+        .btn-outline:hover { border-color:var(--cyan); color:var(--cyan); }
+        .success-bar { width:100%; height:3px; background:linear-gradient(90deg,var(--pink),var(--cyan),var(--yellow)); margin-bottom:28px; }
+        .error-card { border-color:rgba(255,51,51,.4); }
+        .error-card h1 { color:var(--red); }
+        .info-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(255,255,255,.05); font-size:.9rem; }
+        .info-lbl { color:var(--gray); font-size:.75rem; letter-spacing:1px; }
+        .info-val  { font-weight:700; }
+        .email-note { background:rgba(0,255,65,.06); border:1px solid rgba(0,255,65,.2); color:var(--green); padding:12px 16px; font-size:.82rem; letter-spacing:1px; margin:16px 0; }
+    </style>
+</head>
+<body>
+<div class="card" id="card">
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p style="color:var(--gray);letter-spacing:2px;font-size:.85rem;">VÉRIFICATION DU PAIEMENT...</p>
+    </div>
+</div>
+
+<script>
+const params  = new URLSearchParams(window.location.search);
+const orderId = params.get('order');
+
+async function checkStatus() {
+    if (!orderId) { showError('Aucune commande trouvée.'); return; }
+
+    // Polling jusqu'à 60 secondes (Monetbil peut prendre quelques secondes)
+    let attempts = 0;
+    const maxAttempts = 30;
+
+    async function poll() {
+        try {
+            const res  = await fetch('/api/payment/status/' + orderId);
+            const data = await res.json();
+
+            if (data.status === 'paid') {
+                // Récupérer les tickets
+                const orderRes  = await fetch('/api/tickets/order/' + orderId);
+                const orderData = await orderRes.json();
+                showSuccess(orderData.order, orderData.tickets);
+
+            } else if (data.status === 'failed') {
+                showError('Paiement refusé ou annulé. Veuillez réessayer.');
+
+            } else if (attempts < maxAttempts) {
+                attempts++;
+                setTimeout(poll, 2000);
+
+            } else {
+                // Timeout — le webhook Monetbil n'est peut-être pas encore arrivé
+                showPending();
+            }
+        } catch(e) {
+            showError('Erreur de connexion : ' + e.message);
+        }
+    }
+    poll();
+}
+
+function showSuccess(order, tickets) {
+    const isVIP  = order.category === 'VIP';
+    const catCls = isVIP ? 'cat-vip' : 'cat-classic';
+    const perks  = isVIP ? '1 PLAT + 1 BOISSON' : '1 BOISSON';
+
+    const ticketRows = tickets.map(t => `
+        <div class="ticket-row">
+            <div>
+                <div class="ticket-cat ${catCls}">${isVIP ? '👑 ' : ''}${order.category}</div>
+                <div class="ticket-id">${t.id}</div>
+            </div>
+            <a href="/api/tickets/download/${t.id}" target="_blank" class="btn btn-pink" style="width:auto;padding:8px 16px;font-size:.9rem;margin:0;">⬇️ PDF</a>
+        </div>`
+    ).join('');
+
+    document.getElementById('card').innerHTML = `
+        <div class="success-bar"></div>
+        <div class="icon">🎉</div>
+        <h1 style="color:var(--cyan)">PAIEMENT CONFIRMÉ !</h1>
+        <p class="sub">VOS BILLETS SONT PRÊTS — NOSTALGIA NIGHT</p>
+
+        <div style="text-align:left;margin-bottom:16px;">
+            <div class="info-row"><span class="info-lbl">TITULAIRE</span><span class="info-val">${order.prenom} ${order.nom.toUpperCase()}</span></div>
+            <div class="info-row"><span class="info-lbl">CATÉGORIE</span><span class="info-val ${catCls}">${order.category}</span></div>
+            <div class="info-row"><span class="info-lbl">QUANTITÉ</span><span class="info-val">${order.qty} billet(s)</span></div>
+            <div class="info-row"><span class="info-lbl">TOTAL PAYÉ</span><span class="info-val">${order.total_price.toLocaleString('fr-FR')} FCFA</span></div>
+            <div class="info-row"><span class="info-lbl">INCLUS</span><span class="info-val">${perks}</span></div>
+        </div>
+
+        <div class="email-note">📧 Un email avec vos billets a été envoyé à <strong>${order.email}</strong></div>
+
+        <p style="color:var(--gray);font-size:.82rem;letter-spacing:1px;margin-bottom:12px;">Téléchargez vos billets PDF — présentez le QR Code à l'entrée :</p>
+        <div class="ticket-list">${ticketRows}</div>
+
+        <a href="/" class="btn btn-outline" style="margin-top:16px;">← RETOUR AU SITE</a>
+    `;
+}
+
+function showError(msg) {
+    document.getElementById('card').className = 'card error-card';
+    document.getElementById('card').innerHTML = `
+        <div class="icon">❌</div>
+        <h1>PAIEMENT ÉCHOUÉ</h1>
+        <p class="sub">${msg}</p>
+        <a href="/" class="btn btn-outline" style="margin-top:24px;">← RÉESSAYER</a>
+    `;
+}
+
+function showPending() {
+    document.getElementById('card').innerHTML = `
+        <div class="icon">⏳</div>
+        <h1 style="color:var(--yellow)">EN ATTENTE</h1>
+        <p class="sub" style="margin-bottom:20px;">Le paiement est en cours de traitement.<br>Vérifiez votre téléphone.</p>
+        <p style="color:var(--gray);font-size:.82rem;letter-spacing:1px;">Vous recevrez votre billet par email dès confirmation.<br>Commande N° : <strong style="color:#fff;font-family:'Orbitron',monospace;">${orderId}</strong></p>
+        <a href="/" class="btn btn-outline" style="margin-top:24px;">← RETOUR AU SITE</a>
+    `;
+}
+
+checkStatus();
+</script>
+</body>
+</html>

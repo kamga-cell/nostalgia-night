@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOSTALGIA NIGHT — Scanner Billets</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <style>
+        :root {
+            --pink: #FF1493; --cyan: #00FFFF; --yellow: #FFD700;
+            --green: #00FF41; --red: #FF3333;
+            --dark: #050505; --dark2: #0f0f0f; --dark3: #1a1a1a;
+            --white: #FFFFFF; --gray: #888888;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: var(--dark); color: var(--white);
+            font-family: 'Rajdhani', sans-serif;
+            min-height: 100vh; overflow-x: hidden;
+        }
+        body::before {
+            content:''; position:fixed; inset:0;
+            background-image:
+                linear-gradient(rgba(0,255,255,.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,255,.02) 1px, transparent 1px);
+            background-size: 40px 40px; pointer-events:none; z-index:0;
+        }
+
+        /* HEADER */
+        header {
+            background: rgba(5,5,5,.95); backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,255,255,.2);
+            padding: 16px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .logo { font-family:'Bebas Neue',cursive; font-size:1.4rem; letter-spacing:3px; }
+        .logo span { color: var(--cyan); text-shadow:0 0 10px var(--cyan); }
+        .staff-badge {
+            background: rgba(0,255,255,.1); border:1px solid var(--cyan);
+            color: var(--cyan); padding:5px 14px;
+            font-family:'Orbitron',monospace; font-size:.62rem; letter-spacing:2px;
+        }
+
+        /* MAIN */
+        .main { max-width: 560px; margin: 0 auto; padding: 32px 20px; position:relative; z-index:1; }
+
+        .page-title {
+            font-family:'Bebas Neue',cursive; font-size:2.8rem; letter-spacing:4px;
+            margin-bottom: 4px; text-align: center;
+        }
+        .page-sub {
+            text-align:center; color:var(--gray); font-size:.8rem;
+            letter-spacing:2px; margin-bottom: 32px;
+        }
+
+        /* STATS BAR */
+        .stats-bar {
+            display: grid; grid-template-columns: repeat(3,1fr); gap: 12px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--dark2); border:1px solid rgba(255,255,255,.07);
+            padding: 14px 10px; text-align:center;
+        }
+        .stat-num {
+            font-family:'Orbitron',monospace; font-size:1.8rem; font-weight:900; line-height:1;
+        }
+        .stat-lbl { font-size:.65rem; letter-spacing:2px; color:var(--gray); margin-top:4px; }
+        .stat-total .stat-num  { color:var(--cyan); }
+        .stat-valid .stat-num  { color:var(--green); }
+        .stat-invalid .stat-num{ color:var(--red); }
+
+        /* SCANNER BOX */
+        .scanner-box {
+            background: var(--dark2); border:2px solid rgba(0,255,255,.25);
+            padding: 24px; margin-bottom: 20px; position:relative;
+        }
+        .scanner-box-title {
+            font-family:'Bebas Neue',cursive; font-size:1.4rem; letter-spacing:3px;
+            margin-bottom:16px; color:var(--cyan);
+            display:flex; align-items:center; gap:10px;
+        }
+        .scanner-dot {
+            width:10px; height:10px; border-radius:50%; background:var(--cyan);
+            box-shadow:0 0 8px var(--cyan);
+            animation:pulse-dot 1.5s infinite;
+        }
+        @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.5;transform:scale(.8);} }
+
+        /* VIDEO */
+        .video-container {
+            position:relative; background:#000;
+            border:1px solid rgba(255,255,255,.1); overflow:hidden;
+        }
+        #scanner-video {
+            width:100%; display:block; max-height:320px; object-fit:cover;
+        }
+        .scan-overlay {
+            position:absolute; inset:0; pointer-events:none;
+            display:flex; align-items:center; justify-content:center;
+        }
+        .scan-frame {
+            width:200px; height:200px; position:relative;
+        }
+        .scan-frame::before, .scan-frame::after,
+        .scan-corner-br, .scan-corner-bl {
+            content:''; position:absolute; width:24px; height:24px; border-color:var(--cyan); border-style:solid;
+        }
+        .scan-frame::before  { top:0; left:0;     border-width:3px 0 0 3px; }
+        .scan-frame::after   { top:0; right:0;    border-width:3px 3px 0 0; }
+        .scan-corner-br      { bottom:0; right:0; border-width:0 3px 3px 0; }
+        .scan-corner-bl      { bottom:0; left:0;  border-width:0 0 3px 3px; }
+        .scan-line {
+            position:absolute; left:6px; right:6px; height:2px;
+            background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+            box-shadow:0 0 8px var(--cyan);
+            animation:scan-move 2s linear infinite;
+            top:0;
+        }
+        @keyframes scan-move { 0%{top:6px;} 100%{top:calc(100% - 8px);} }
+        .video-placeholder {
+            width:100%; height:260px; background:var(--dark3);
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            gap:12px; color:var(--gray);
+        }
+        .video-placeholder-icon { font-size:3rem; opacity:.3; }
+        .video-placeholder-text { font-size:.85rem; letter-spacing:1px; }
+
+        /* CONTROLS */
+        .scanner-controls { display:flex; gap:12px; margin-top:14px; }
+        .btn-scan-start {
+            flex:1; background:var(--cyan); color:#000; border:none;
+            padding:13px; font-family:'Bebas Neue',cursive; font-size:1.1rem; letter-spacing:3px;
+            cursor:pointer; transition:all .2s;
+        }
+        .btn-scan-start:hover { background:#00d4d4; }
+        .btn-scan-stop {
+            flex:1; background:transparent; color:var(--red); border:2px solid var(--red);
+            padding:11px; font-family:'Bebas Neue',cursive; font-size:1.1rem; letter-spacing:3px;
+            cursor:pointer; transition:all .2s;
+        }
+        .btn-scan-stop:hover { background:var(--red); color:#fff; }
+
+        /* MANUAL INPUT */
+        .manual-box {
+            background:var(--dark2); border:1px solid rgba(255,255,255,.08);
+            padding:20px; margin-bottom:20px;
+        }
+        .manual-title {
+            font-family:'Bebas Neue',cursive; font-size:1.2rem; letter-spacing:2px;
+            margin-bottom:14px; color:var(--gray);
+        }
+        .manual-row { display:flex; gap:10px; }
+        .manual-input {
+            flex:1; background:var(--dark3); border:1px solid rgba(255,255,255,.1);
+            color:var(--white); padding:11px 14px;
+            font-family:'Orbitron',monospace; font-size:.75rem; letter-spacing:2px;
+            outline:none; transition:border-color .2s; text-transform:uppercase;
+        }
+        .manual-input:focus { border-color:var(--cyan); }
+        .manual-input::placeholder { color:rgba(255,255,255,.2); font-size:.7rem; }
+        .btn-check {
+            background:var(--pink); color:#000; border:none;
+            padding:11px 22px; font-family:'Bebas Neue',cursive; font-size:1rem; letter-spacing:2px;
+            cursor:pointer; transition:all .2s; white-space:nowrap;
+        }
+        .btn-check:hover { background:#cc0077; color:#fff; }
+
+        /* RESULT */
+        .result-box {
+            padding:24px; margin-bottom:20px; display:none;
+            border:2px solid; animation:slide-in .3s ease-out;
+        }
+        @keyframes slide-in { from{transform:translateY(-10px);opacity:0;} to{transform:translateY(0);opacity:1;} }
+        .result-box.valid   { border-color:var(--green); background:rgba(0,255,65,.06); }
+        .result-box.invalid { border-color:var(--red);   background:rgba(255,51,51,.06); }
+        .result-box.already { border-color:var(--yellow);background:rgba(255,215,0,.06); }
+
+        .result-icon { font-size:3rem; margin-bottom:10px; }
+        .result-status {
+            font-family:'Bebas Neue',cursive; font-size:2rem; letter-spacing:3px; margin-bottom:8px;
+        }
+        .result-box.valid   .result-status { color:var(--green); }
+        .result-box.invalid .result-status { color:var(--red); }
+        .result-box.already .result-status { color:var(--yellow); }
+
+        .result-detail { font-size:.9rem; letter-spacing:1px; color:var(--gray); margin-bottom:12px; }
+        .result-info {
+            background:rgba(0,0,0,.4); padding:14px 16px;
+            border-top:1px solid rgba(255,255,255,.08);
+        }
+        .ri-row { display:flex; justify-content:space-between; padding:5px 0; font-size:.88rem; }
+        .ri-lbl { color:var(--gray); letter-spacing:1px; font-size:.75rem; }
+        .ri-val { font-weight:700; letter-spacing:1px; }
+        .ri-cat-classic { color:var(--cyan); }
+        .ri-cat-vip     { color:var(--pink); }
+
+        /* HISTORY */
+        .history-box {
+            background:var(--dark2); border:1px solid rgba(255,255,255,.07); padding:20px;
+        }
+        .history-title {
+            font-family:'Bebas Neue',cursive; font-size:1.3rem; letter-spacing:3px;
+            margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;
+        }
+        .btn-clear-hist {
+            background:transparent; color:var(--gray); border:1px solid rgba(255,255,255,.1);
+            padding:5px 12px; font-family:'Rajdhani',sans-serif; font-size:.8rem;
+            cursor:pointer; letter-spacing:1px; transition:all .2s;
+        }
+        .btn-clear-hist:hover { border-color:var(--red); color:var(--red); }
+
+        .history-list { display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; }
+        .hist-item {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:10px 14px; font-size:.85rem; border-left:3px solid;
+            background:rgba(0,0,0,.3);
+        }
+        .hist-item.v  { border-color:var(--green); }
+        .hist-item.i  { border-color:var(--red); }
+        .hist-item.a  { border-color:var(--yellow); }
+        .hist-info { flex:1; }
+        .hist-id   { font-family:'Orbitron',monospace; font-size:.65rem; letter-spacing:1px; color:var(--gray); }
+        .hist-name { font-weight:700; letter-spacing:.5px; }
+        .hist-status { font-family:'Orbitron',monospace; font-size:.6rem; font-weight:700; letter-spacing:1px; }
+        .hist-item.v  .hist-status { color:var(--green); }
+        .hist-item.i  .hist-status { color:var(--red); }
+        .hist-item.a  .hist-status { color:var(--yellow); }
+        .hist-time { font-size:.72rem; color:var(--gray); letter-spacing:.5px; margin-top:2px; }
+
+        .empty-hist { text-align:center; padding:24px; color:var(--gray); font-size:.85rem; letter-spacing:1px; }
+
+        /* Scrollbar */
+        .history-list::-webkit-scrollbar { width:4px; }
+        .history-list::-webkit-scrollbar-track { background:var(--dark3); }
+        .history-list::-webkit-scrollbar-thumb { background:rgba(0,255,255,.3); }
+
+        /* Back link */
+        .back-link {
+            display:inline-flex; align-items:center; gap:8px;
+            color:var(--gray); font-size:.85rem; letter-spacing:1px;
+            text-decoration:none; margin-bottom:24px; transition:color .2s;
+        }
+        .back-link:hover { color:var(--cyan); }
+
+        /* Beep feedback */
+        .flash-valid   { animation:flash-g .4s; }
+        .flash-invalid { animation:flash-r .4s; }
+        @keyframes flash-g { 0%,100%{background:var(--dark);} 50%{background:rgba(0,255,65,.15);} }
+        @keyframes flash-r { 0%,100%{background:var(--dark);} 50%{background:rgba(255,51,51,.15);} }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">NOSTALGIA<span>NIGHT</span></div>
+    <div class="staff-badge">🔒 STAFF ONLY</div>
+</header>
+
+<div class="main">
+    <a class="back-link" href="index.html">← RETOUR AU SITE</a>
+
+    <h1 class="page-title neon-cyan" style="color:var(--cyan);text-shadow:0 0 12px var(--cyan);">SCANNER BILLETS</h1>
+    <p class="page-sub">VALIDATION À L'ENTRÉE · SOIRÉE 18 JUILLET 2026</p>
+
+    <!-- Stats -->
+    <div class="stats-bar">
+        <div class="stat-card stat-total">
+            <div class="stat-num" id="stat-total">0</div>
+            <div class="stat-lbl">SCANNÉS</div>
+        </div>
+        <div class="stat-card stat-valid">
+            <div class="stat-num" id="stat-valid">0</div>
+            <div class="stat-lbl">VALIDES</div>
+        </div>
+        <div class="stat-card stat-invalid">
+            <div class="stat-num" id="stat-invalid">0</div>
+            <div class="stat-lbl">REFUSÉS</div>
+        </div>
+    </div>
+
+    <!-- Result -->
+    <div class="result-box" id="result-box">
+        <div class="result-icon" id="res-icon">✅</div>
+        <div class="result-status" id="res-status">BILLET VALIDE</div>
+        <div class="result-detail" id="res-detail">Ce billet est authentique et n'a pas encore été utilisé.</div>
+        <div class="result-info" id="res-info"></div>
+    </div>
+
+    <!-- Camera Scanner -->
+    <div class="scanner-box">
+        <div class="scanner-box-title">
+            <div class="scanner-dot" id="scan-dot" style="background:var(--gray);box-shadow:none;"></div>
+            SCANNER PAR CAMÉRA
+        </div>
+
+        <div class="video-container" id="video-container">
+            <div class="video-placeholder" id="video-placeholder">
+                <div class="video-placeholder-icon">📷</div>
+                <div class="video-placeholder-text">Cliquez sur START pour activer la caméra</div>
+            </div>
+            <video id="scanner-video" playsinline style="display:none;"></video>
+            <canvas id="scanner-canvas" style="display:none;"></canvas>
+            <div class="scan-overlay" id="scan-overlay" style="display:none;">
+                <div class="scan-frame">
+                    <div class="scan-corner-br"></div>
+                    <div class="scan-corner-bl"></div>
+                    <div class="scan-line"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="scanner-controls">
+            <button class="btn-scan-start" id="btn-start" onclick="startScanner()">▶ DÉMARRER</button>
+            <button class="btn-scan-stop"  id="btn-stop"  onclick="stopScanner()" style="display:none;">⬛ ARRÊTER</button>
+        </div>
+    </div>
+
+    <!-- Manual Input -->
+    <div class="manual-box">
+        <div class="manual-title">OU ENTREZ LE N° DE BILLET MANUELLEMENT</div>
+        <div class="manual-row">
+            <input class="manual-input" id="manual-input" type="text" placeholder="ex: NN-A1B2C3-D4E5"
+                onkeydown="if(event.key==='Enter') manualCheck()">
+            <button class="btn-check" onclick="manualCheck()">VÉRIFIER</button>
+        </div>
+    </div>
+
+    <!-- History -->
+    <div class="history-box">
+        <div class="history-title">
+            HISTORIQUE <span style="color:var(--gray);font-size:1rem;" id="hist-count">(0)</span>
+            <button class="btn-clear-hist" onclick="clearHistory()">EFFACER</button>
+        </div>
+        <div class="history-list" id="history-list">
+            <div class="empty-hist">Aucun billet scanné pour l'instant</div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+let scanning    = false;
+let stream      = null;
+let rafId       = null;
+let scanHistory = JSON.parse(sessionStorage.getItem('nn_scan_history') || '[]');
+let scannedIds  = new Set(scanHistory.filter(h=>h.type==='valid').map(h=>h.id));
+let stats       = JSON.parse(sessionStorage.getItem('nn_scan_stats') || '{"total":0,"valid":0,"invalid":0}');
+
+// Init
+updateStats();
+renderHistory();
+
+// ══════════════════════════════════════
+// CAMERA SCANNER
+// ══════════════════════════════════════
+async function startScanner() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment', width: {ideal:1280}, height: {ideal:720} }
+        });
+        const video = document.getElementById('scanner-video');
+        video.srcObject = stream;
+        await video.play();
+
+        document.getElementById('video-placeholder').style.display = 'none';
+        video.style.display = 'block';
+        document.getElementById('scan-overlay').style.display = 'flex';
+        document.getElementById('btn-start').style.display = 'none';
+        document.getElementById('btn-stop').style.display  = 'block';
+
+        const dot = document.getElementById('scan-dot');
+        dot.style.background   = 'var(--cyan)';
+        dot.style.boxShadow    = '0 0 8px var(--cyan)';
+
+        scanning = true;
+        scanFrame();
+    } catch(err) {
+        showResult('invalid', '❌', 'CAMÉRA INACCESSIBLE',
+            'Impossible d\'accéder à la caméra. Utilisez la saisie manuelle.', null);
+    }
+}
+
+function stopScanner() {
+    scanning = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    if (stream) { stream.getTracks().forEach(t=>t.stop()); stream = null; }
+
+    const video = document.getElementById('scanner-video');
+    video.style.display = 'none';
+    video.srcObject = null;
+    document.getElementById('video-placeholder').style.display = 'flex';
+    document.getElementById('scan-overlay').style.display = 'none';
+    document.getElementById('btn-start').style.display = 'block';
+    document.getElementById('btn-stop').style.display  = 'none';
+
+    const dot = document.getElementById('scan-dot');
+    dot.style.background = 'var(--gray)';
+    dot.style.boxShadow  = 'none';
+}
+
+function scanFrame() {
+    if (!scanning) return;
+    const video  = document.getElementById('scanner-video');
+    const canvas = document.getElementById('scanner-canvas');
+
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width  = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: 'dontInvert'
+        });
+        if (code && code.data) {
+            handleQRData(code.data);
+            // Pause 2.5s before next scan to avoid double-reads
+            scanning = false;
+            setTimeout(() => { scanning = true; scanFrame(); }, 2500);
+            return;
+        }
+    }
+    rafId = requestAnimationFrame(scanFrame);
+}
+
+// ══════════════════════════════════════
+// MANUAL CHECK
+// ══════════════════════════════════════
+function manualCheck() {
+    const val = document.getElementById('manual-input').value.trim().toUpperCase();
+    if (!val) return;
+
+    // Try as raw ticket ID or as JSON
+    let data;
+    try { data = JSON.parse(val); } catch(_) { data = { id: val }; }
+
+    handleQRData(val.startsWith('{') ? val : JSON.stringify({ id: val, manual: true }));
+    document.getElementById('manual-input').value = '';
+}
+
+// ══════════════════════════════════════
+// HANDLE QR DATA
+// ══════════════════════════════════════
+function handleQRData(raw) {
+    let parsed = null;
+    try { parsed = JSON.parse(raw); } catch(_) { parsed = { id: raw }; }
+
+    const id  = (parsed.id || '').toUpperCase();
+    const nom = parsed.nom || '—';
+    const cat = parsed.cat || '—';
+    const qty = parsed.qty || 1;
+    const evt = parsed.event || '';
+
+    // Validation rules
+    const isNostalgiaTicket = id.startsWith('NN-') || evt.includes('NOSTALGIA');
+    const alreadyUsed       = scannedIds.has(id);
+
+    if (!isNostalgiaTicket) {
+        flashBody('invalid');
+        showResult('invalid', '❌', 'BILLET INVALIDE',
+            'Ce QR code ne correspond pas à un billet Nostalgia Night.',
+            null);
+        addHistory({ type:'invalid', id: id||'INCONNU', nom:'—', cat:'—', time: now() });
+        stats.total++; stats.invalid++;
+    } else if (alreadyUsed) {
+        flashBody('invalid');
+        showResult('already', '⚠️', 'DÉJÀ UTILISÉ',
+            'Ce billet a déjà été scanné à l\'entrée. Accès refusé.',
+            { id, nom, cat, qty });
+        addHistory({ type:'already', id, nom, cat, time: now() });
+        stats.total++; stats.invalid++;
+    } else {
+        flashBody('valid');
+        scannedIds.add(id);
+        showResult('valid', '✅', 'BILLET VALIDE — ENTRÉE AUTORISÉE',
+            'Billet authentique. Bienvenue à la Nostalgia Night !',
+            { id, nom, cat, qty });
+        addHistory({ type:'valid', id, nom, cat, time: now() });
+        stats.total++; stats.valid++;
+        playBeep(true);
+    }
+
+    updateStats();
+    sessionStorage.setItem('nn_scan_stats', JSON.stringify(stats));
+}
+
+// ══════════════════════════════════════
+// SHOW RESULT
+// ══════════════════════════════════════
+function showResult(type, icon, status, detail, info) {
+    const box = document.getElementById('result-box');
+    box.className = 'result-box ' + type;
+    box.style.display = 'block';
+    document.getElementById('res-icon').textContent   = icon;
+    document.getElementById('res-status').textContent = status;
+    document.getElementById('res-detail').textContent = detail;
+
+    const infoEl = document.getElementById('res-info');
+    if (info) {
+        const catClass = (info.cat||'').toUpperCase() === 'VIP' ? 'ri-cat-vip' : 'ri-cat-classic';
+        infoEl.innerHTML = `
+            <div class="ri-row"><span class="ri-lbl">TITULAIRE</span><span class="ri-val">${info.nom}</span></div>
+            <div class="ri-row"><span class="ri-lbl">CATÉGORIE</span><span class="ri-val ${catClass}">${info.cat} ${(info.cat||'').toUpperCase()==='VIP'?'👑':''}</span></div>
+            <div class="ri-row"><span class="ri-lbl">QUANTITÉ</span><span class="ri-val">${info.qty} personne(s)</span></div>
+            <div class="ri-row"><span class="ri-lbl">N° BILLET</span><span class="ri-val" style="font-family:'Orbitron',monospace;font-size:.7rem;">${info.id}</span></div>`;
+        infoEl.style.display = 'block';
+    } else {
+        infoEl.innerHTML = '';
+        infoEl.style.display = 'none';
+    }
+
+    // Auto-hide after 6s
+    setTimeout(() => { if(box.style.display!=='none') box.style.display='none'; }, 6000);
+}
+
+// ══════════════════════════════════════
+// HISTORY
+// ══════════════════════════════════════
+function addHistory(entry) {
+    scanHistory.unshift(entry);
+    if (scanHistory.length > 100) scanHistory.pop();
+    sessionStorage.setItem('nn_scan_history', JSON.stringify(scanHistory));
+    renderHistory();
+}
+
+function renderHistory() {
+    const list = document.getElementById('history-list');
+    document.getElementById('hist-count').textContent = '(' + scanHistory.length + ')';
+    if (!scanHistory.length) {
+        list.innerHTML = '<div class="empty-hist">Aucun billet scanné pour l\'instant</div>';
+        return;
+    }
+    list.innerHTML = scanHistory.map(h => `
+        <div class="hist-item ${h.type==='valid'?'v':h.type==='already'?'a':'i'}">
+            <div class="hist-info">
+                <div class="hist-name">${h.nom} <span style="font-size:.8rem;color:var(--gray);">· ${h.cat}</span></div>
+                <div class="hist-id">${h.id}</div>
+                <div class="hist-time">${h.time}</div>
+            </div>
+            <div class="hist-status">${h.type==='valid'?'✅ OK':h.type==='already'?'⚠️ DÉJ.':'❌ REF.'}</div>
+        </div>`
+    ).join('');
+}
+
+function clearHistory() {
+    if (!confirm('Effacer tout l\'historique de scan ?')) return;
+    scanHistory = []; scannedIds.clear();
+    stats = {total:0,valid:0,invalid:0};
+    sessionStorage.removeItem('nn_scan_history');
+    sessionStorage.removeItem('nn_scan_stats');
+    renderHistory(); updateStats();
+}
+
+// ══════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════
+function updateStats() {
+    document.getElementById('stat-total').textContent   = stats.total;
+    document.getElementById('stat-valid').textContent   = stats.valid;
+    document.getElementById('stat-invalid').textContent = stats.invalid;
+}
+
+function now() {
+    return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function flashBody(type) {
+    document.body.classList.remove('flash-valid','flash-invalid');
+    void document.body.offsetWidth; // reflow
+    document.body.classList.add(type==='valid'?'flash-valid':'flash-invalid');
+}
+
+function playBeep(valid) {
+    try {
+        const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(valid ? 880 : 220, ctx.currentTime);
+        osc.frequency.setValueAtTime(valid ? 1100: 180, ctx.currentTime + .1);
+        gain.gain.setValueAtTime(.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .4);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + .4);
+    } catch(_) {}
+}
+</script>
+</body>
+</html>
