@@ -21,8 +21,9 @@ async function sendTicketEmail(order, ticketIds) {
         return;
     }
 
+    const baseUrl = process.env.APP_URL || 'https://web-production-5d3f9.up.railway.app';
     const ticketLinks = ticketIds.map(id =>
-        `<a href="http://localhost:3000/api/tickets/download/${id}" style="display:block; padding:10px 20px; background:#FF1493; color:#000; text-decoration:none; font-weight:bold; margin:5px 0;">⬇️ Télécharger billet ${id}</a>`
+        `<a href="${baseUrl}/api/tickets/download/${id}" style="display:block; padding:10px 20px; background:#FF1493; color:#000; text-decoration:none; font-weight:bold; margin:5px 0;">⬇️ Télécharger billet ${id}</a>`
     ).join('');
 
     await transporter.sendMail({
