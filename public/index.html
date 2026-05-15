@@ -819,15 +819,39 @@
             <div class="proc-wrap" style="text-align:center;padding:20px 0;">
                 <div style="font-size:3.5rem;margin-bottom:16px;">⏳</div>
                 <div class="proc-title">EN ATTENTE DE <span class="neon-yellow">CONFIRMATION</span></div>
-                <p style="color:var(--gray);margin:12px 0 20px;font-size:.9rem;letter-spacing:.8px;">
-                    Votre réservation est enregistrée.<br>Dès confirmation de votre paiement par l'organisatrice,<br>vous recevrez votre billet par <strong style="color:var(--cyan)">email</strong>.
+                <p style="color:var(--gray);margin:12px 0 16px;font-size:.9rem;letter-spacing:.8px;">
+                    Votre réservation est enregistrée.<br>Dès confirmation du paiement, vous recevrez votre billet par <strong style="color:var(--cyan)">email</strong>.
                 </p>
-                <div style="background:#0a0a15;border:1px solid rgba(0,255,255,.3);border-radius:8px;padding:12px 18px;display:inline-block;margin-bottom:20px;">
-                    <div style="font-size:.7rem;color:var(--gray);margin-bottom:4px;">CODE DE RÉSERVATION</div>
-                    <div class="neon-cyan proc-code" style="font-family:'Bebas Neue',cursive;font-size:1.6rem;letter-spacing:6px;">—</div>
+
+                <!-- Récap réservation -->
+                <div style="background:#0a0a15;border:1px solid rgba(0,255,255,.3);border-radius:10px;padding:16px 20px;margin-bottom:16px;text-align:left;">
+                    <div style="font-size:.68rem;color:var(--gray);letter-spacing:2px;margin-bottom:10px;">RÉCAPITULATIF DE VOTRE RÉSERVATION</div>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.07);">
+                        <div>
+                            <div style="font-size:.68rem;color:var(--gray);">CATÉGORIE</div>
+                            <div id="proc-cat" style="font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;color:var(--cyan);">PASS CLASSIC</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:.68rem;color:var(--gray);">QUANTITÉ</div>
+                            <div id="proc-qty" style="font-family:'Bebas Neue',cursive;font-size:1.4rem;letter-spacing:2px;color:var(--yellow);">1 BILLET</div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <div style="font-size:.68rem;color:var(--gray);">CODE DE RÉSERVATION</div>
+                            <div class="neon-cyan proc-code" style="font-family:'Bebas Neue',cursive;font-size:1.3rem;letter-spacing:4px;">—</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:.68rem;color:var(--gray);">TOTAL PAYÉ</div>
+                            <div id="proc-total" style="font-family:'Bebas Neue',cursive;font-size:1.2rem;color:var(--pink);">5 000 FCFA</div>
+                        </div>
+                    </div>
                 </div>
+
                 <p style="font-size:.72rem;color:var(--gray);">Délai de confirmation : 24h max · <span style="color:var(--pink)">📞 +237 6 99 58 43 55</span></p>
-                <button class="btn-close-m" onclick="closeModal()" style="margin-top:20px;">FERMER</button>
+                <button class="btn-close-m" onclick="closeModal()" style="margin-top:16px;">FERMER</button>
             </div>
         </div>
 
@@ -836,8 +860,25 @@
             <div class="confirm-wrap">
                 <div class="success-ico">🎉</div>
                 <h2 class="modal-title">PAIEMENT <span class="neon-cyan">CONFIRMÉ !</span></h2>
-                <p style="color:var(--gray);letter-spacing:1px;font-size:.88rem;margin-bottom:22px;">
-                    Votre billet a été généré. Téléchargez-le et présentez le QR Code à l'entrée.
+
+                <!-- Résumé qty + catégorie -->
+                <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+                    <div style="background:#0a0a15;border:1px solid rgba(0,255,255,.3);border-radius:8px;padding:10px 18px;text-align:center;">
+                        <div style="font-size:.65rem;color:var(--gray);letter-spacing:2px;">CATÉGORIE</div>
+                        <div id="s3-cat" style="font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;color:var(--cyan);">CLASSIC</div>
+                    </div>
+                    <div style="background:#0a0a15;border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:10px 18px;text-align:center;">
+                        <div style="font-size:.65rem;color:var(--gray);letter-spacing:2px;">BILLETS</div>
+                        <div id="s3-qty" style="font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;color:var(--yellow);">1</div>
+                    </div>
+                    <div style="background:#0a0a15;border:1px solid rgba(255,20,147,.3);border-radius:8px;padding:10px 18px;text-align:center;">
+                        <div style="font-size:.65rem;color:var(--gray);letter-spacing:2px;">TOTAL</div>
+                        <div id="s3-total" style="font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;color:var(--pink);">5 000 FCFA</div>
+                    </div>
+                </div>
+
+                <p style="color:var(--gray);letter-spacing:1px;font-size:.85rem;margin-bottom:16px;">
+                    Billet(s) généré(s). Téléchargez et présentez le QR Code à l'entrée.
                 </p>
 
                 <!-- Aperçu du billet -->
@@ -1102,7 +1143,17 @@ function buildWhatsAppLink(code, prenom, nom, qty, ticketName, total) {
     waBtn.onclick = function() {
         // Après clic WhatsApp, passer à l'écran d'attente
         setTimeout(() => {
+            // Code de réservation
             document.querySelector('.proc-code').textContent = code;
+            // Catégorie
+            const catEl = document.getElementById('proc-cat');
+            catEl.textContent = ticketName;
+            catEl.style.color = ST.ticket === 'VIP' ? 'var(--pink)' : 'var(--cyan)';
+            // Quantité
+            document.getElementById('proc-qty').textContent = qty + ' BILLET' + (qty > 1 ? 'S' : '');
+            // Total
+            document.getElementById('proc-total').textContent = fmt(total) + ' FCFA';
+
             showStep('p');
             // Sauvegarder la réservation en localStorage
             saveReservation(code, prenom, nom, qty, ticketName, total);
@@ -1204,6 +1255,13 @@ function buildTicketPreview() {
     } else {
         document.getElementById('tp-qty-badge').style.display = 'none';
     }
+
+    // Badges catégorie / qty / total dans step3
+    const s3cat = document.getElementById('s3-cat');
+    s3cat.textContent = 'PASS ' + ST.ticket;
+    s3cat.style.color = ST.ticket === 'VIP' ? 'var(--pink)' : 'var(--cyan)';
+    document.getElementById('s3-qty').textContent   = qty + ' billet' + (qty > 1 ? 's' : '');
+    document.getElementById('s3-total').textContent = fmt(t.price * qty) + ' FCFA';
 
     // QR Code apercu client
     const qrBox = document.getElementById('qr-box');
