@@ -60,20 +60,38 @@ router.get('/stats', authAdmin, (req, res) => {
             SUM(CASE WHEN status='paid'    THEN 1 ELSE 0 END) as paid_orders,
             SUM(CASE WHEN status='paid' THEN total_price ELSE 0 END) as total_revenue,
             SUM(CASE WHEN status='paid' AND category='CLASSIC' THEN qty ELSE 0 END) as classic_sold,
-            SUM(CASE WHEN status='paid' AND category='VIP'     THEN qty ELSE 0 END) as vip_sold
+            SUM(CASE WHEN status='paid' AND category='VIP'     THEN qty ELSE 0 END) as vip_sold,
+            SUM(CASE WHEN status='paid' AND category='CLASSIC' THEN total_price ELSE 0 END) as classic_revenue,
+            SUM(CASE WHEN status='paid' AND category='VIP'     THEN total_price ELSE 0 END) as vip_revenue,
+            SUM(CASE WHEN status='pending' AND category='CLASSIC' THEN qty ELSE 0 END) as classic_pending,
+            SUM(CASE WHEN status='pending' AND category='VIP'     THEN qty ELSE 0 END) as vip_pending
         FROM orders
     `).get();
 
     const scans = db.prepare(`
         SELECT
             COUNT(*) as total_scans,
-            SUM(CASE WHEN result='valid'       THEN 1 ELSE 0 END) as valid_scans,
+            SUM(CASE WHEN result='valid'        THEN 1 ELSE 0 END) as valid_scans,
             SUM(CASE WHEN result='already_used' THEN 1 ELSE 0 END) as already_used,
-            SUM(CASE WHEN result='invalid'     THEN 1 ELSE 0 END) as invalid_scans
+            SUM(CASE WHEN result='invalid'      THEN 1 ELSE 0 END) as invalid_scans
         FROM scan_log
     `).get();
 
     res.json({ orders, scans });
+});
+
+// ─── POST /api/admin/test-email ────────────────────────────────
+router.post('/test-email', authAdmin, async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'email requis' });
+    try {
+        const mailer = require('../mailer');
+        await mailer.sendTestEmail(email);
+        res.json({ success: true, message: `Email test envoyé à ${email}` });
+    } catch (e) {
+        console.error('Test email error:', e);
+        res.status(500).json({ error: e.message });
+    }
 });
 
 // ─── GET /api/admin/orders ─────────────────────────────────────

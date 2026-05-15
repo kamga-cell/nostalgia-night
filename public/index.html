@@ -771,7 +771,7 @@
                 <div style="display:flex;gap:12px;flex-wrap:wrap;">
 
                     <!-- ORANGE MONEY — lien USSD direct -->
-                    <a id="om-pay-btn" href="#" style="flex:1;min-width:140px;text-decoration:none;display:block;">
+                    <a id="om-pay-btn" href="#" onclick="onPaymentButtonClicked()" style="flex:1;min-width:140px;text-decoration:none;display:block;">
                         <div style="background:#1a0d00;border-radius:6px;padding:12px;border:2px solid #FF6600;cursor:pointer;transition:all .2s;text-align:center;"
                              onmouseover="this.style.background='#2a1500'" onmouseout="this.style.background='#1a0d00'">
                             <div style="font-size:.7rem;color:var(--gray);margin-bottom:4px;">🟠 ORANGE MONEY</div>
@@ -784,7 +784,7 @@
                     </a>
 
                     <!-- MTN MOMO — lien USSD direct -->
-                    <a id="mtn-pay-btn" href="#" style="flex:1;min-width:140px;text-decoration:none;display:block;">
+                    <a id="mtn-pay-btn" href="#" onclick="onPaymentButtonClicked()" style="flex:1;min-width:140px;text-decoration:none;display:block;">
                         <div style="background:#1a1500;border-radius:6px;padding:12px;border:2px solid #FFCC00;cursor:pointer;transition:all .2s;text-align:center;"
                              onmouseover="this.style.background='#252000'" onmouseout="this.style.background='#1a1500'">
                             <div style="font-size:.7rem;color:var(--gray);margin-bottom:4px;">🟡 MTN MOMO</div>
@@ -801,14 +801,29 @@
                 </div>
             </div>
 
-            <!-- Bouton WhatsApp -->
-            <a id="wa-btn" href="#" target="_blank" style="display:block;text-decoration:none;">
-                <button class="btn-submit" style="background:#25D366;color:#000;width:100%;margin-bottom:10px;" type="button">
-                    💬 CONFIRMER MON PAIEMENT SUR WHATSAPP →
+            <!-- ✅ Bouton "J'ai payé" — apparaît après clic sur Orange ou MTN -->
+            <div id="paid-confirm-section" style="display:none;text-align:center;margin-bottom:14px;">
+                <div style="font-size:.78rem;color:var(--gray);margin-bottom:10px;letter-spacing:.8px;">
+                    ⬆️ Effectuez le virement ci-dessus, puis confirmez :
+                </div>
+                <button onclick="onPaidConfirmed()"
+                    style="background:#1a2e1a;border:2px solid #25D366;color:#25D366;
+                           font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:2px;
+                           padding:12px 24px;cursor:pointer;width:100%;border-radius:6px;transition:all .2s;"
+                    onmouseover="this.style.background='#25D366';this.style.color='#000'"
+                    onmouseout="this.style.background='#1a2e1a';this.style.color='#25D366'">
+                    ✅ J'AI EFFECTUÉ LE VIREMENT →
+                </button>
+            </div>
+
+            <!-- Bouton WhatsApp — masqué jusqu'à confirmation du paiement -->
+            <a id="wa-btn" href="#" target="_blank" style="display:none;text-decoration:none;">
+                <button class="btn-submit" style="background:#25D366;color:#000;width:100%;margin-bottom:6px;" type="button">
+                    💬 ENVOYER MA CONFIRMATION SUR WHATSAPP →
                 </button>
             </a>
-            <p style="font-size:.72rem;color:var(--gray);text-align:center;margin-bottom:14px;letter-spacing:.8px;">
-                Après paiement, appuyez ici — envoyez le message WhatsApp pré-rempli à l'organisatrice
+            <p id="wa-hint" style="display:none;font-size:.72rem;color:var(--gray);text-align:center;margin-bottom:14px;letter-spacing:.8px;">
+                Appuyez pour envoyer le message pré-rempli à l'organisatrice
             </p>
 
             <button class="btn-back" onclick="showStep(1)">← MODIFIER</button>
@@ -1118,17 +1133,34 @@ async function step1Next() {
 // Android : déclenche directement le dialogue de paiement USSD
 // iPhone  : redirige vers l'app Orange Money / MTN MoMo si installée
 function buildPaymentLinks(amount) {
-    const amt = String(amount); // montant brut sans espaces ni virgules
+    const amt = String(amount);
 
-    // Orange Money Cameroun — transfert vers numéro OM
-    // USSD exact : #150*1*1*699584355*MONTANT#
-    const omLink = 'tel:%23150*1*1*699584355*' + amt + '%23';
-    document.getElementById('om-pay-btn').href = omLink;
+    // Orange Money Cameroun : #150*1*1*699584355*MONTANT#
+    document.getElementById('om-pay-btn').href  = 'tel:%23150*1*1*699584355*' + amt + '%23';
+    // MTN MoMo Cameroun    : *126*1*1*683222267*MONTANT#
+    document.getElementById('mtn-pay-btn').href = 'tel:*126*1*1*683222267*' + amt + '%23';
 
-    // MTN MoMo Cameroun — transfert vers numéro MTN
-    // USSD exact : *126*1*1*683222267*MONTANT#
-    const mtnLink = 'tel:*126*1*1*683222267*' + amt + '%23';
-    document.getElementById('mtn-pay-btn').href = mtnLink;
+    // Réinitialiser l'état : WhatsApp masqué, confirmation masquée
+    document.getElementById('paid-confirm-section').style.display = 'none';
+    document.getElementById('wa-btn').style.display  = 'none';
+    document.getElementById('wa-hint').style.display = 'none';
+}
+
+// Appelé quand le client clique sur Orange ou MTN
+function onPaymentButtonClicked() {
+    // Attendre 3s (le temps que l'USSD s'ouvre) puis afficher la confirmation
+    setTimeout(function() {
+        document.getElementById('paid-confirm-section').style.display = 'block';
+        document.getElementById('paid-confirm-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 3000);
+}
+
+// Appelé quand le client confirme avoir payé → révèle le bouton WhatsApp
+function onPaidConfirmed() {
+    document.getElementById('paid-confirm-section').style.display = 'none';
+    document.getElementById('wa-btn').style.display  = 'block';
+    document.getElementById('wa-hint').style.display = 'block';
+    document.getElementById('wa-btn').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function buildWhatsAppLink(code, prenom, nom, qty, ticketName, total) {

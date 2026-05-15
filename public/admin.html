@@ -138,7 +138,8 @@
         <!-- Tabs -->
         <div class="tabs">
             <button class="tab active" onclick="switchTab('pending')">⏳ EN ATTENTE <span id="pending-count" style="color:var(--yellow)"></span></button>
-            <button class="tab" onclick="switchTab('all')">📋 TOUTES LES RÉSERVATIONS</button>
+            <button class="tab" onclick="switchTab('all')">📋 RÉSERVATIONS</button>
+            <button class="tab" onclick="switchTab('compta')">💰 COMPTABILITÉ</button>
             <button class="tab" onclick="switchTab('scan')">📷 SCANNER</button>
             <button class="refresh-btn" onclick="loadAll()">↻ Actualiser</button>
         </div>
@@ -167,6 +168,11 @@
                     <tbody id="all-body"></tbody>
                 </table>
             </div>
+        </div>
+
+        <!-- Comptabilité -->
+        <div id="tab-compta" style="display:none;">
+            <div id="compta-content"></div>
         </div>
 
         <!-- Scanner -->
@@ -351,12 +357,154 @@ async function doScan() {
 }
 
 function switchTab(tab) {
-    ['pending','all','scan'].forEach(t => {
+    ['pending','all','compta','scan'].forEach(t => {
         document.getElementById('tab-'+t).style.display = t===tab ? 'block' : 'none';
     });
     document.querySelectorAll('.tab').forEach((el,i) => {
-        el.classList.toggle('active', ['pending','all','scan'][i]===tab);
+        el.classList.toggle('active', ['pending','all','compta','scan'][i]===tab);
     });
+    if (tab === 'compta') renderCompta();
+}
+
+// ════════════════════════════════
+// COMPTABILITÉ
+// ════════════════════════════════
+let _lastStats = null;
+async function renderCompta() {
+    try {
+        const r = await fetch(API + '/api/admin/stats', { headers: authHeaders() });
+        const d = await r.json();
+        _lastStats = d;
+        const o = d.orders;
+
+        const CLASSIC_PRICE = 5000, VIP_PRICE = 8000;
+        const CLASSIC_CAPACITY = 300, VIP_CAPACITY = 100;
+        const classicSold    = o.classic_sold    || 0;
+        const vipSold        = o.vip_sold        || 0;
+        const classicRev     = o.classic_revenue || (classicSold * CLASSIC_PRICE);
+        const vipRev         = o.vip_revenue     || (vipSold * VIP_PRICE);
+        const totalRev       = o.total_revenue   || 0;
+        const classicPending = o.classic_pending || 0;
+        const vipPending     = o.vip_pending     || 0;
+
+        const potentialRev = totalRev
+            + classicPending * CLASSIC_PRICE
+            + vipPending * VIP_PRICE;
+        const maxRev = CLASSIC_CAPACITY * CLASSIC_PRICE + VIP_CAPACITY * VIP_PRICE;
+
+        const pct = n => maxRev > 0 ? Math.min(100, Math.round(n / maxRev * 100)) : 0;
+
+        document.getElementById('compta-content').innerHTML = `
+        <div style="max-width:700px;">
+            <h3 style="font-family:'Bebas Neue',cursive;letter-spacing:3px;color:var(--yellow);
+                       font-size:1.3rem;margin-bottom:20px;">💰 COMPTABILITÉ — BILLETS VENDUS & RECETTES</h3>
+
+            <!-- Tableau par catégorie -->
+            <div style="background:#0f0f0f;border:1px solid #222;border-radius:10px;overflow:hidden;margin-bottom:20px;">
+                <table style="width:100%;border-collapse:collapse;font-size:.9rem;">
+                    <thead>
+                        <tr style="background:#1a1a1a;">
+                            <th style="padding:12px 16px;text-align:left;color:#666;font-family:'Bebas Neue',cursive;letter-spacing:1.5px;">CATÉGORIE</th>
+                            <th style="padding:12px 16px;text-align:center;color:#666;font-family:'Bebas Neue',cursive;letter-spacing:1.5px;">PRIX UNIT.</th>
+                            <th style="padding:12px 16px;text-align:center;color:#666;font-family:'Bebas Neue',cursive;letter-spacing:1.5px;">CAPACITÉ</th>
+                            <th style="padding:12px 16px;text-align:center;color:#00FF41;font-family:'Bebas Neue',cursive;letter-spacing:1.5px;">CONFIRMÉS</th>
+                            <th style="padding:12px 16px;text-align:center;color:var(--yellow);font-family:'Bebas Neue',cursive;letter-spacing:1.5px;">EN ATTENTE</th>
+                            <th style="padding:12px 16px;text-align:right;color:#00FF41;font-family:'Bebas Neue',cursive;letter-spacing:1.5px;">RECETTES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-top:1px solid #1a1a1a;">
+                            <td style="padding:14px 16px;"><span style="color:var(--cyan);font-weight:700;">🎟 CLASSIC</span></td>
+                            <td style="padding:14px 16px;text-align:center;color:#888;">${fmt(CLASSIC_PRICE)} FCFA</td>
+                            <td style="padding:14px 16px;text-align:center;color:#888;">${CLASSIC_CAPACITY}</td>
+                            <td style="padding:14px 16px;text-align:center;color:#00FF41;font-weight:700;font-size:1.1rem;">${classicSold}</td>
+                            <td style="padding:14px 16px;text-align:center;color:var(--yellow);">${classicPending}</td>
+                            <td style="padding:14px 16px;text-align:right;color:#00FF41;font-weight:700;">${fmt(classicRev)} FCFA</td>
+                        </tr>
+                        <tr style="border-top:1px solid #1a1a1a;">
+                            <td style="padding:14px 16px;"><span style="color:var(--pink);font-weight:700;">👑 VIP</span></td>
+                            <td style="padding:14px 16px;text-align:center;color:#888;">${fmt(VIP_PRICE)} FCFA</td>
+                            <td style="padding:14px 16px;text-align:center;color:#888;">${VIP_CAPACITY}</td>
+                            <td style="padding:14px 16px;text-align:center;color:#00FF41;font-weight:700;font-size:1.1rem;">${vipSold}</td>
+                            <td style="padding:14px 16px;text-align:center;color:var(--yellow);">${vipPending}</td>
+                            <td style="padding:14px 16px;text-align:right;color:#00FF41;font-weight:700;">${fmt(vipRev)} FCFA</td>
+                        </tr>
+                        <tr style="border-top:2px solid #333;background:#0a0a0a;">
+                            <td colspan="5" style="padding:14px 16px;font-family:'Bebas Neue',cursive;
+                                letter-spacing:2px;color:var(--yellow);font-size:1rem;">TOTAL ENCAISSÉ</td>
+                            <td style="padding:14px 16px;text-align:right;color:var(--yellow);
+                                font-family:'Bebas Neue',cursive;font-size:1.4rem;">${fmt(totalRev)} FCFA</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Projections -->
+            <div style="background:#0f0f0f;border:1px solid #222;border-radius:10px;padding:20px;margin-bottom:20px;">
+                <div style="font-family:'Bebas Neue',cursive;letter-spacing:2px;color:#888;
+                            font-size:.85rem;margin-bottom:14px;">📈 PROJECTIONS</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div style="text-align:center;padding:14px;background:#111;border-radius:8px;border:1px solid rgba(255,215,0,.2);">
+                        <div style="font-size:.68rem;color:#666;letter-spacing:1px;margin-bottom:4px;">SI TOUTES LES EN ATTENTE CONFIRMÉES</div>
+                        <div style="font-family:'Bebas Neue',cursive;font-size:1.5rem;color:var(--yellow);">${fmt(potentialRev)} FCFA</div>
+                    </div>
+                    <div style="text-align:center;padding:14px;background:#111;border-radius:8px;border:1px solid rgba(0,255,255,.2);">
+                        <div style="font-size:.68rem;color:#666;letter-spacing:1px;margin-bottom:4px;">SALLE COMPLÈTE (MAX)</div>
+                        <div style="font-family:'Bebas Neue',cursive;font-size:1.5rem;color:var(--cyan);">${fmt(maxRev)} FCFA</div>
+                    </div>
+                </div>
+                <!-- Barre progression -->
+                <div style="margin-top:14px;">
+                    <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#666;margin-bottom:6px;">
+                        <span>Taux de remplissage</span>
+                        <span>${pct(totalRev)}% encaissé</span>
+                    </div>
+                    <div style="background:#1a1a1a;border-radius:4px;height:10px;overflow:hidden;">
+                        <div style="height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));
+                                    width:${pct(totalRev)}%;transition:width .5s;border-radius:4px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test email -->
+            <div style="background:#0f0f0f;border:1px solid #222;border-radius:10px;padding:20px;">
+                <div style="font-family:'Bebas Neue',cursive;letter-spacing:2px;color:#888;
+                            font-size:.85rem;margin-bottom:14px;">📧 TEST ENVOI EMAIL</div>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <input id="test-email-input" type="email" class="input" placeholder="votre@email.com"
+                           style="flex:1;min-width:200px;margin:0;padding:10px 14px;">
+                    <button onclick="sendTestEmail()"
+                            style="background:var(--cyan);color:#000;border:none;border-radius:6px;
+                                   font-family:'Bebas Neue',cursive;font-size:.95rem;letter-spacing:2px;
+                                   padding:10px 20px;cursor:pointer;white-space:nowrap;">
+                        ENVOYER TEST
+                    </button>
+                </div>
+                <p style="color:#555;font-size:.75rem;margin-top:8px;">
+                    Vérifiez que les emails arrivent correctement (vérifiez les spams)
+                </p>
+            </div>
+        </div>`;
+    } catch(e) {
+        document.getElementById('compta-content').innerHTML =
+            '<p style="color:#ff4444;padding:20px;">Erreur chargement comptabilité</p>';
+    }
+}
+
+async function sendTestEmail() {
+    const email = document.getElementById('test-email-input').value.trim();
+    if (!email) return;
+    try {
+        const r = await fetch(API + '/api/admin/test-email', {
+            method: 'POST', headers: authHeaders(),
+            body: JSON.stringify({ email })
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error);
+        showToast('📧 Email test envoyé à ' + email + ' — vérifiez votre boîte !');
+    } catch(e) {
+        showToast('❌ Email échoué : ' + e.message, true);
+    }
 }
 
 function showToast(msg, isError=false) {

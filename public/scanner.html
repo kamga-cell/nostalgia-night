@@ -253,6 +253,73 @@
 </head>
 <body>
 
+<!-- ── ÉCRAN DE CONNEXION STAFF ── -->
+<div id="lock-screen" style="
+    position:fixed;inset:0;z-index:9999;
+    background:#050505;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:24px;">
+    <div style="background:#0f0f0f;border:1px solid rgba(0,255,255,.3);border-radius:12px;
+                padding:40px 32px;width:100%;max-width:360px;text-align:center;">
+        <div style="font-size:2.8rem;margin-bottom:10px;">🔒</div>
+        <div style="font-family:'Bebas Neue',cursive;font-size:1.8rem;color:var(--cyan);
+                    letter-spacing:3px;margin-bottom:4px;">ACCÈS STAFF</div>
+        <div style="color:#666;font-size:.82rem;letter-spacing:1px;margin-bottom:24px;">
+            NOSTALGIA NIGHT · SCANNER BILLETS
+        </div>
+        <input id="lock-pwd" type="password" placeholder="Mot de passe staff"
+               style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:6px;
+                      color:#fff;font-family:'Rajdhani',sans-serif;font-size:1rem;
+                      padding:13px 16px;margin-bottom:14px;box-sizing:border-box;outline:none;"
+               onfocus="this.style.borderColor='var(--cyan)'"
+               onblur="this.style.borderColor='#333'"
+               onkeydown="if(event.key==='Enter') unlockScanner()">
+        <button onclick="unlockScanner()"
+                style="width:100%;background:var(--cyan);color:#000;border:none;border-radius:6px;
+                       font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:3px;
+                       padding:14px;cursor:pointer;">
+            ACCÉDER →
+        </button>
+        <div id="lock-err" style="color:#ff4444;font-size:.82rem;margin-top:10px;display:none;">
+            Mot de passe incorrect
+        </div>
+    </div>
+</div>
+
+<script>
+function unlockScanner() {
+    const pwd = document.getElementById('lock-pwd').value.trim();
+    if (!pwd) return;
+    fetch('/api/admin/stats', { headers: { 'x-admin-password': pwd } })
+        .then(r => {
+            if (!r.ok) throw new Error('wrong');
+            return r.json();
+        })
+        .then(() => {
+            // Stocker en session et masquer l'écran
+            sessionStorage.setItem('scanner_pwd', pwd);
+            document.getElementById('lock-screen').style.display = 'none';
+            // Passer le mot de passe au reste du script
+            window.ADMIN_PWD = pwd;
+        })
+        .catch(() => {
+            document.getElementById('lock-err').style.display = 'block';
+            document.getElementById('lock-pwd').value = '';
+            document.getElementById('lock-pwd').focus();
+        });
+}
+
+// Si déjà authentifié dans la session, déverrouiller directement
+(function() {
+    const saved = sessionStorage.getItem('scanner_pwd');
+    if (saved) {
+        fetch('/api/admin/stats', { headers: { 'x-admin-password': saved } })
+            .then(r => { if (r.ok) { window.ADMIN_PWD = saved; document.getElementById('lock-screen').style.display = 'none'; } })
+            .catch(() => {});
+    }
+})();
+</script>
+
 <header>
     <div class="logo">NOSTALGIA<span>NIGHT</span></div>
     <div class="staff-badge">🔒 STAFF ONLY</div>
@@ -443,45 +510,56 @@ function manualCheck() {
 }
 
 // ══════════════════════════════════════
-// HANDLE QR DATA
+// HANDLE QR DATA — valide via API serveur
 // ══════════════════════════════════════
-function handleQRData(raw) {
+async function handleQRData(raw) {
     let parsed = null;
     try { parsed = JSON.parse(raw); } catch(_) { parsed = { id: raw }; }
 
-    const id  = (parsed.id || '').toUpperCase();
-    const nom = parsed.nom || '—';
-    const cat = parsed.cat || '—';
-    const qty = parsed.qty || 1;
-    const evt = parsed.event || '';
+    const ticketId = (parsed.id || raw || '').toUpperCase().trim();
+    if (!ticketId) return;
 
-    // Validation rules
-    const isNostalgiaTicket = id.startsWith('NN-') || evt.includes('NOSTALGIA');
-    const alreadyUsed       = scannedIds.has(id);
+    // Appel API de scan (enregistré côté serveur)
+    try {
+        const resp = await fetch('/api/admin/scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-admin-password': window.ADMIN_PWD || '' },
+            body: JSON.stringify({ ticketId, scanner_ip: 'scanner-web' })
+        });
+        const data = await resp.json();
 
-    if (!isNostalgiaTicket) {
-        flashBody('invalid');
-        showResult('invalid', '❌', 'BILLET INVALIDE',
-            'Ce QR code ne correspond pas à un billet Nostalgia Night.',
-            null);
-        addHistory({ type:'invalid', id: id||'INCONNU', nom:'—', cat:'—', time: now() });
-        stats.total++; stats.invalid++;
-    } else if (alreadyUsed) {
-        flashBody('invalid');
-        showResult('already', '⚠️', 'DÉJÀ UTILISÉ',
-            'Ce billet a déjà été scanné à l\'entrée. Accès refusé.',
-            { id, nom, cat, qty });
-        addHistory({ type:'already', id, nom, cat, time: now() });
-        stats.total++; stats.invalid++;
-    } else {
-        flashBody('valid');
-        scannedIds.add(id);
-        showResult('valid', '✅', 'BILLET VALIDE — ENTRÉE AUTORISÉE',
-            'Billet authentique. Bienvenue à la Nostalgia Night !',
-            { id, nom, cat, qty });
-        addHistory({ type:'valid', id, nom, cat, time: now() });
-        stats.total++; stats.valid++;
-        playBeep(true);
+        if (data.result === 'valid') {
+            flashBody('valid');
+            playBeep(true);
+            showResult('valid', '✅', 'BILLET VALIDE — ENTRÉE AUTORISÉE',
+                'Billet authentique. Bienvenue à la Nostalgia Night !',
+                { id: data.ticket.id, nom: data.ticket.nom,
+                  cat: data.ticket.category, perks: data.ticket.perks });
+            addHistory({ type:'valid', id: data.ticket.id, nom: data.ticket.nom, cat: data.ticket.category, time: now() });
+            stats.total++; stats.valid++;
+
+        } else if (data.result === 'already_used') {
+            flashBody('invalid');
+            playBeep(false);
+            showResult('already', '⚠️', 'DÉJÀ UTILISÉ',
+                'Ce billet a déjà été scanné. Accès refusé.',
+                { id: data.ticket.id, nom: data.ticket.nom,
+                  cat: data.ticket.category, used_at: data.ticket.used_at });
+            addHistory({ type:'already', id: data.ticket?.id || ticketId, nom: data.ticket?.nom || '—', cat: data.ticket?.category || '—', time: now() });
+            stats.total++; stats.invalid++;
+
+        } else {
+            flashBody('invalid');
+            playBeep(false);
+            showResult('invalid', '❌', 'BILLET INVALIDE',
+                'Ce QR code ne correspond à aucun billet Nostalgia Night.',
+                null);
+            addHistory({ type:'invalid', id: ticketId, nom:'—', cat:'—', time: now() });
+            stats.total++; stats.invalid++;
+        }
+    } catch(err) {
+        showResult('invalid', '⚠️', 'ERREUR RÉSEAU',
+            'Impossible de vérifier le billet. Vérifiez votre connexion.', null);
     }
 
     updateStats();
