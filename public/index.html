@@ -717,21 +717,38 @@
 
             <!-- Instructions paiement -->
             <div style="background:#0d0d0d;border:1px solid rgba(255,215,0,.25);border-radius:8px;padding:16px 18px;margin-bottom:18px;">
-                <div style="font-size:.75rem;color:var(--yellow);letter-spacing:2px;margin-bottom:12px;font-weight:700;">📲 EFFECTUEZ LE PAIEMENT :</div>
+                <div style="font-size:.75rem;color:var(--yellow);letter-spacing:2px;margin-bottom:4px;font-weight:700;">📲 APPUYEZ POUR PAYER DIRECTEMENT :</div>
+                <div style="font-size:.68rem;color:var(--gray);margin-bottom:12px;">Le clavier de paiement s'ouvre automatiquement — entrez juste votre code secret</div>
                 <div style="display:flex;gap:12px;flex-wrap:wrap;">
-                    <div style="flex:1;min-width:140px;background:#111;border-radius:6px;padding:12px;border:1px solid rgba(255,165,0,.3);">
-                        <div style="font-size:.7rem;color:var(--gray);margin-bottom:4px;">🟠 ORANGE MONEY</div>
-                        <div style="color:#FF6600;font-family:'Bebas Neue',cursive;font-size:1.3rem;letter-spacing:3px;">691 464 539</div>
-                        <div style="font-size:.65rem;color:var(--gray);">Nom: NKOLO SANDRINE</div>
-                    </div>
-                    <div style="flex:1;min-width:140px;background:#111;border-radius:6px;padding:12px;border:1px solid rgba(255,204,0,.3);">
-                        <div style="font-size:.7rem;color:var(--gray);margin-bottom:4px;">🟡 MTN MOMO</div>
-                        <div style="color:#FFCC00;font-family:'Bebas Neue',cursive;font-size:1.3rem;letter-spacing:3px;">683 222 267</div>
-                        <div style="font-size:.65rem;color:var(--gray);">Nom: NKOLO SANDRINE</div>
-                    </div>
+
+                    <!-- ORANGE MONEY — lien USSD direct -->
+                    <a id="om-pay-btn" href="#" style="flex:1;min-width:140px;text-decoration:none;display:block;">
+                        <div style="background:#1a0d00;border-radius:6px;padding:12px;border:2px solid #FF6600;cursor:pointer;transition:all .2s;text-align:center;"
+                             onmouseover="this.style.background='#2a1500'" onmouseout="this.style.background='#1a0d00'">
+                            <div style="font-size:.7rem;color:var(--gray);margin-bottom:4px;">🟠 ORANGE MONEY</div>
+                            <div style="color:#FF6600;font-family:'Bebas Neue',cursive;font-size:1.3rem;letter-spacing:3px;">691 464 539</div>
+                            <div style="font-size:.6rem;color:#aaa;margin-bottom:8px;">NKOLO SANDRINE</div>
+                            <div style="background:#FF6600;color:#000;font-weight:900;font-size:.75rem;padding:6px 10px;border-radius:4px;letter-spacing:1px;">
+                                📲 PAYER AVEC ORANGE
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- MTN MOMO — lien USSD direct -->
+                    <a id="mtn-pay-btn" href="#" style="flex:1;min-width:140px;text-decoration:none;display:block;">
+                        <div style="background:#1a1500;border-radius:6px;padding:12px;border:2px solid #FFCC00;cursor:pointer;transition:all .2s;text-align:center;"
+                             onmouseover="this.style.background='#252000'" onmouseout="this.style.background='#1a1500'">
+                            <div style="font-size:.7rem;color:var(--gray);margin-bottom:4px;">🟡 MTN MOMO</div>
+                            <div style="color:#FFCC00;font-family:'Bebas Neue',cursive;font-size:1.3rem;letter-spacing:3px;">683 222 267</div>
+                            <div style="font-size:.6rem;color:#aaa;margin-bottom:8px;">NKOLO SANDRINE</div>
+                            <div style="background:#FFCC00;color:#000;font-weight:900;font-size:.75rem;padding:6px 10px;border-radius:4px;letter-spacing:1px;">
+                                📲 PAYER AVEC MTN
+                            </div>
+                        </div>
+                    </a>
                 </div>
                 <div style="margin-top:12px;font-size:.72rem;color:var(--gray);letter-spacing:.8px;">
-                    ⚠️ Envoyez exactement <strong id="pay-amount-txt" style="color:var(--yellow);">5 000 FCFA</strong> — mentionnez votre code de réservation dans le motif
+                    💰 Montant exact : <strong id="pay-amount-txt" style="color:var(--yellow);">5 000 FCFA</strong>
                 </div>
             </div>
 
@@ -742,7 +759,7 @@
                 </button>
             </a>
             <p style="font-size:.72rem;color:var(--gray);text-align:center;margin-bottom:14px;letter-spacing:.8px;">
-                Cliquez après avoir effectué le paiement — envoyez le message WhatsApp pré-rempli à l'organisatrice
+                Après paiement, appuyez ici — envoyez le message WhatsApp pré-rempli à l'organisatrice
             </p>
 
             <button class="btn-back" onclick="showStep(1)">← MODIFIER</button>
@@ -989,12 +1006,32 @@ async function step1Next() {
 
         // Construire le lien WhatsApp
         buildWhatsAppLink(data.orderId, prenom, nom, qty, t.name, ST.totalPrice);
+        // Construire les liens de paiement USSD directs
+        buildPaymentLinks(ST.totalPrice);
         showStep(2);
     } catch(err) {
         alert('Erreur : ' + err.message);
     } finally {
         btn.textContent = 'CONTINUER →'; btn.disabled = false;
     }
+}
+
+// ── Liens USSD paiement direct ──────────────────────────────────────────
+// Ouvre le composeur de l'opérateur avec le montant pré-rempli
+// Android : déclenche directement le dialogue de paiement USSD
+// iPhone  : redirige vers l'app Orange Money / MTN MoMo si installée
+function buildPaymentLinks(amount) {
+    const amt = String(amount); // montant brut sans espaces ni virgules
+
+    // Orange Money Cameroun — transfert vers numéro OM
+    // USSD : #150*1*1*DESTINATAIRE*MONTANT#
+    const omLink = 'tel:%23150*1*1*237691464539*' + amt + '%23';
+    document.getElementById('om-pay-btn').href = omLink;
+
+    // MTN MoMo Cameroun — transfert vers numéro MTN
+    // USSD : *126*1*DESTINATAIRE*MONTANT#
+    const mtnLink = 'tel:*126*1*237683222267*' + amt + '%23';
+    document.getElementById('mtn-pay-btn').href = mtnLink;
 }
 
 function buildWhatsAppLink(code, prenom, nom, qty, ticketName, total) {
