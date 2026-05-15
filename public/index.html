@@ -648,8 +648,57 @@
             </div>
         </div>
 
+        <!-- ── ÉTAPE 0 : Choix du pass ── -->
+        <div id="step0" style="display:none;">
+            <h2 class="modal-title">CHOISIR <span class="neon-cyan">MON PASS</span></h2>
+            <p class="modal-sub">SÉLECTIONNEZ VOTRE CATÉGORIE DE BILLET</p>
+
+            <!-- CLASSIC -->
+            <div onclick="selectTicket('CLASSIC')" style="cursor:pointer;background:#060e0e;border:2px solid var(--cyan);border-radius:10px;padding:20px;margin-bottom:14px;transition:all .2s;position:relative;overflow:hidden;"
+                 onmouseover="this.style.background='#0a1a1a'" onmouseout="this.style.background='#060e0e'">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+                    <div>
+                        <div style="font-size:.7rem;color:var(--gray);letter-spacing:2px;margin-bottom:4px;">🎟 ENTRÉE STANDARD</div>
+                        <div style="font-family:'Bebas Neue',cursive;font-size:1.7rem;color:var(--cyan);letter-spacing:3px;">PASS CLASSIC</div>
+                        <div style="margin-top:8px;color:#ccc;font-size:.88rem;">✅ Accès à la soirée</div>
+                        <div style="color:#ccc;font-size:.88rem;">🍹 1 boisson offerte à l'entrée</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-family:'Bebas Neue',cursive;font-size:2rem;color:var(--cyan);">5 000</div>
+                        <div style="font-size:.75rem;color:var(--gray);">FCFA / personne</div>
+                    </div>
+                </div>
+                <div style="margin-top:14px;background:var(--cyan);color:#000;font-family:'Bebas Neue',cursive;font-size:1rem;letter-spacing:2px;padding:10px;text-align:center;border-radius:5px;">
+                    CHOISIR CLASSIC →
+                </div>
+            </div>
+
+            <!-- VIP -->
+            <div onclick="selectTicket('VIP')" style="cursor:pointer;background:#0e0610;border:2px solid var(--pink);border-radius:10px;padding:20px;margin-bottom:6px;transition:all .2s;position:relative;overflow:hidden;"
+                 onmouseover="this.style.background='#1a0a1a'" onmouseout="this.style.background='#0e0610'">
+                <div style="position:absolute;top:10px;right:10px;background:var(--pink);color:#000;font-family:'Bebas Neue',cursive;font-size:.7rem;padding:3px 8px;border-radius:3px;letter-spacing:1px;">BEST VALUE</div>
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+                    <div>
+                        <div style="font-size:.7rem;color:var(--gray);letter-spacing:2px;margin-bottom:4px;">👑 EXPÉRIENCE PREMIUM</div>
+                        <div style="font-family:'Bebas Neue',cursive;font-size:1.7rem;color:var(--pink);letter-spacing:3px;">PASS VIP</div>
+                        <div style="margin-top:8px;color:#ccc;font-size:.88rem;">✅ Accès à la soirée</div>
+                        <div style="color:#ccc;font-size:.88rem;">🍽️ 1 plat offert à l'entrée</div>
+                        <div style="color:#ccc;font-size:.88rem;">🍹 1 boisson offerte à l'entrée</div>
+                        <div style="color:#ccc;font-size:.88rem;">⭐ Zone VIP réservée</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-family:'Bebas Neue',cursive;font-size:2rem;color:var(--pink);">8 000</div>
+                        <div style="font-size:.75rem;color:var(--gray);">FCFA / personne</div>
+                    </div>
+                </div>
+                <div style="margin-top:14px;background:var(--pink);color:#000;font-family:'Bebas Neue',cursive;font-size:1rem;letter-spacing:2px;padding:10px;text-align:center;border-radius:5px;">
+                    CHOISIR VIP 👑 →
+                </div>
+            </div>
+        </div>
+
         <!-- ── ÉTAPE 1 : Infos personnelles ── -->
-        <div id="step1">
+        <div id="step1" style="display:none;">
             <h2 class="modal-title">VOS <span class="neon-pink">INFORMATIONS</span></h2>
             <p class="modal-sub">REMPLISSEZ VOS COORDONNÉES</p>
 
@@ -889,25 +938,28 @@ setInterval(tick,1000); tick();
 // MODAL OPEN / CLOSE
 // ════════════════════════════════
 function openModal(ticket) {
-    if (ticket) ST.ticket = ticket;
-    refreshSummary();
     document.getElementById('purchase-modal').classList.add('active');
     document.body.style.overflow = 'hidden';
+    if (ticket) {
+        // Ouvert depuis une carte spécifique → on sait déjà le type
+        ST.ticket = ticket;
+        refreshSummary();
+        showStep(1);
+    } else {
+        // Ouvert depuis ACHETER / RÉSERVER → afficher le choix
+        showStep(0);
+    }
+}
+
+function selectTicket(type) {
+    ST.ticket = type;
+    refreshSummary();
     showStep(1);
 }
 
 function closeModal() {
     document.getElementById('purchase-modal').classList.remove('active');
     document.body.style.overflow = '';
-    ST.payment = null;
-    document.getElementById('pm-mtn').className    = 'pay-method';
-    document.getElementById('pm-orange').className = 'pay-method';
-    document.getElementById('e-pay').style.display = 'none';
-    // reset proc steps
-    ['ps1','ps2','ps3','ps4'].forEach(id => {
-        const el = document.getElementById(id);
-        el.classList.remove('ps-active','ps-done');
-    });
 }
 
 document.getElementById('purchase-modal').addEventListener('click', function(e){
@@ -918,11 +970,15 @@ document.getElementById('purchase-modal').addEventListener('click', function(e){
 // SHOW STEP
 // ════════════════════════════════
 function showStep(n) {
-    ['step1','step2','step-proc','step3'].forEach(id =>
+    ['step0','step1','step2','step-proc','step3'].forEach(id =>
         document.getElementById(id).style.display = 'none'
     );
-    const map = {1:'step1', 2:'step2', 'p':'step-proc', 3:'step3'};
+    const map = {0:'step0', 1:'step1', 2:'step2', 'p':'step-proc', 3:'step3'};
     document.getElementById(map[n]).style.display = 'block';
+
+    // Indicateur d'étapes : masquer sur step0, afficher sinon
+    const stepsEl = document.querySelector('.steps');
+    if (stepsEl) stepsEl.style.display = (n === 0) ? 'none' : '';
 
     const num = typeof n === 'number' ? n : 3;
     for (let i=1; i<=3; i++) {
