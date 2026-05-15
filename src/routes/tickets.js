@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const QRCode     = require('qrcode');
 const PDFDoc     = require('pdfkit');
 const multer     = require('multer');
-const Anthropic  = require('@anthropic-ai/sdk');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const db         = require('../database');
 const mailer     = require('../mailer');
 
@@ -18,10 +18,11 @@ const upload = multer({
     }
 });
 
-// ─── Client Claude (API key optionnelle au chargement) ───────────
-function getAnthropic() {
-    if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY non configurée');
-    return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// ─── Client Gemini Vision (Google AI) ────────────────────────────
+function getGeminiModel() {
+    if (!process.env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY non configurée');
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    return genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 }
 
 const TICKETS = {
@@ -157,54 +158,48 @@ router.post('/verify-payment', upload.single('screenshot'), async (req, res) => 
         ? req.file.mimetype
         : 'image/jpeg';
 
-    // ── Appel Claude Vision ────────────────────────────────────
+    // ── Appel Gemini Vision (Google AI) ───────────────────────
     let aiResult = { valid: false, reason: 'Analyse impossible' };
     try {
-        const anthropic = getAnthropic();
+        const model  = getGeminiModel();
         const prompt =
 `Tu es un vérificateur anti-fraude pour NOSTALGIA NIGHT, un événement au Cameroun.
 
-Analyse cette image. Elle doit être un SMS ou une notification officielle de MTN MoMo ou Orange Money confirmant un transfert réussi.
+Analyse cette image. Elle doit être un SMS ou une notification officielle de MTN MoMo ou Orange Money Cameroun confirmant un transfert réussi.
 
 Commande à vérifier :
 - Montant attendu : ${order.total_price} FCFA
 - Numéros autorisés : 699584355 (Orange Money, nom : Ngangoua Batracienne) OU 683222267 (MTN MoMo, nom : Miguel Fomekou)
 
 Critères STRICTS (sois impitoyable avec les fraudes) :
-1. Est-ce un vrai SMS/notification MTN MoMo ou Orange Money Cameroun ? (pas un montage Photoshop, pas une page web éditée, pas un faux)
+1. Est-ce un vrai SMS/notification MTN MoMo ou Orange Money Cameroun ? (pas un montage, pas une page web éditée, pas un faux)
 2. Le statut indique-t-il clairement un paiement RÉUSSI / EFFECTUÉ ?
-3. Le montant visible correspond-il à ${order.total_price} FCFA (tolérance ±0 FCFA) ?
-4. Le numéro ou nom destinataire correspond-il à 699584355 / Ngangoua ou 683222267 / Fomekou ?
+3. Le montant visible correspond-il EXACTEMENT à ${order.total_price} FCFA ?
+4. Le numéro ou nom destinataire correspond-il à 699584355/Ngangoua OU 683222267/Fomekou ?
 
-En cas de moindre doute, réponds false. La sécurité prime.
+En cas de moindre doute, réponds false. La sécurité prime toujours.
 
-Réponds UNIQUEMENT avec du JSON valide, sans aucun texte autour :
+Réponds UNIQUEMENT avec du JSON valide, SANS texte autour, SANS markdown :
 {"valid":true,"reason":"ok","detected_amount":${order.total_price},"operator":"MTN"}
 ou
-{"valid":false,"reason":"explication courte en français (max 100 cars)","detected_amount":0,"operator":"INCONNU"}`;
+{"valid":false,"reason":"explication courte en français max 100 caractères","detected_amount":0,"operator":"INCONNU"}`;
 
-        const response = await anthropic.messages.create({
-            model:      'claude-opus-4-5',
-            max_tokens: 200,
-            messages: [{
-                role: 'user',
-                content: [
-                    { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageBase64 } },
-                    { type: 'text',  text: prompt }
-                ]
-            }]
-        });
+        const result = await model.generateContent([
+            { inlineData: { mimeType: mediaType, data: imageBase64 } },
+            prompt
+        ]);
 
-        const raw = response.content[0]?.text?.trim() || '';
+        const raw = result.response.text().trim();
         try {
-            aiResult = JSON.parse(raw);
+            // Nettoyer les éventuels blocs markdown ```json ... ```
+            const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+            aiResult = JSON.parse(cleaned);
         } catch (_) {
             const m = raw.match(/\{[\s\S]*?\}/);
             if (m) aiResult = JSON.parse(m[0]);
         }
     } catch (e) {
-        console.error('Claude Vision error:', e.message);
-        // Log l'erreur technique mais ne la laisse pas bloquer — réponse neutre
+        console.error('Gemini Vision error:', e.message);
         db.prepare('INSERT INTO payment_verifications (order_id, result, ai_reason) VALUES (?,?,?)')
           .run(orderId, 'error', e.message);
         return res.status(503).json({
