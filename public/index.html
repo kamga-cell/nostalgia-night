@@ -726,8 +726,8 @@
                         <div style="background:#1a0d00;border-radius:6px;padding:12px;border:2px solid #FF6600;cursor:pointer;transition:all .2s;text-align:center;"
                              onmouseover="this.style.background='#2a1500'" onmouseout="this.style.background='#1a0d00'">
                             <div style="font-size:.7rem;color:var(--gray);margin-bottom:4px;">🟠 ORANGE MONEY</div>
-                            <div style="color:#FF6600;font-family:'Bebas Neue',cursive;font-size:1.3rem;letter-spacing:3px;">691 464 539</div>
-                            <div style="font-size:.6rem;color:#aaa;margin-bottom:8px;">NKOLO SANDRINE</div>
+                            <div style="color:#FF6600;font-family:'Bebas Neue',cursive;font-size:1.3rem;letter-spacing:3px;">699 584 355</div>
+                            <div style="font-size:.6rem;color:#aaa;margin-bottom:8px;">NGANGOUA B. FOMEKOU</div>
                             <div style="background:#FF6600;color:#000;font-weight:900;font-size:.75rem;padding:6px 10px;border-radius:4px;letter-spacing:1px;">
                                 📲 PAYER AVEC ORANGE
                             </div>
@@ -740,7 +740,7 @@
                              onmouseover="this.style.background='#252000'" onmouseout="this.style.background='#1a1500'">
                             <div style="font-size:.7rem;color:var(--gray);margin-bottom:4px;">🟡 MTN MOMO</div>
                             <div style="color:#FFCC00;font-family:'Bebas Neue',cursive;font-size:1.3rem;letter-spacing:3px;">683 222 267</div>
-                            <div style="font-size:.6rem;color:#aaa;margin-bottom:8px;">NKOLO SANDRINE</div>
+                            <div style="font-size:.6rem;color:#aaa;margin-bottom:8px;">MIGUEL FOMEKOU</div>
                             <div style="background:#FFCC00;color:#000;font-weight:900;font-size:.75rem;padding:6px 10px;border-radius:4px;letter-spacing:1px;">
                                 📲 PAYER AVEC MTN
                             </div>
@@ -1024,13 +1024,13 @@ function buildPaymentLinks(amount) {
     const amt = String(amount); // montant brut sans espaces ni virgules
 
     // Orange Money Cameroun — transfert vers numéro OM
-    // USSD : #150*1*1*DESTINATAIRE*MONTANT#
-    const omLink = 'tel:%23150*1*1*237691464539*' + amt + '%23';
+    // USSD exact : #150*1*1*699584355*MONTANT#
+    const omLink = 'tel:%23150*1*1*699584355*' + amt + '%23';
     document.getElementById('om-pay-btn').href = omLink;
 
     // MTN MoMo Cameroun — transfert vers numéro MTN
-    // USSD : *126*1*DESTINATAIRE*MONTANT#
-    const mtnLink = 'tel:*126*1*237683222267*' + amt + '%23';
+    // USSD exact : *126*1*1*683222267*MONTANT#
+    const mtnLink = 'tel:*126*1*1*683222267*' + amt + '%23';
     document.getElementById('mtn-pay-btn').href = mtnLink;
 }
 
