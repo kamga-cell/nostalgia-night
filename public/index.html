@@ -988,28 +988,71 @@ async function step2Pay() {
     document.getElementById('e-pay').style.display = 'none';
 
     const btn = document.querySelector('#step2 .btn-submit');
-    btn.textContent = 'TRAITEMENT...'; btn.disabled = true;
+    btn.textContent = 'ENVOI...'; btn.disabled = true;
 
     try {
         const res  = await fetch(API + '/api/payment/initiate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId: ST.orderId, method: ST.payment })
+            body: JSON.stringify({ orderId: ST.orderId, phone: payPhone })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Erreur paiement');
 
-        ST.simulated  = data.simulated || false;
-        ST.paymentRef = data.payment_ref;
-
-        // Orange Money renvoie une URL de redirection
-        if (data.payment_url) { window.location.href = data.payment_url; return; }
-
-        runPaymentAnim();
+        ST.payPhone = payPhone;
+        // Afficher l'écran "vérifie ton téléphone" et poller le statut
+        showUssdWaiting(data);
     } catch(err) {
         alert('Erreur paiement : ' + err.message);
-        btn.textContent = 'PAYER MAINTENANT'; btn.disabled = false;
+        btn.textContent = 'PAYER MAINTENANT →'; btn.disabled = false;
     }
+}
+
+function showUssdWaiting(data) {
+    showStep('proc');
+    // Mettre à jour le message de l'étape de traitement
+    const procDiv = document.getElementById('step-proc');
+    procDiv.innerHTML = `
+        <div style="text-align:center;padding:20px 0;">
+            <div style="font-size:3rem;margin-bottom:16px;">📱</div>
+            <h3 style="color:#ff2d78;margin-bottom:12px;">VÉRIFIEZ VOTRE TÉLÉPHONE !</h3>
+            <p style="color:#ccc;margin-bottom:8px;">Un message USSD a été envoyé au</p>
+            <p style="color:#00fff7;font-size:1.2rem;font-weight:bold;margin-bottom:16px;">${ST.payPhone}</p>
+            <p style="color:#ccc;margin-bottom:20px;">Composez votre PIN ${ST.payment} pour confirmer le paiement de <strong style="color:#ffff00">${ST.totalPrice ? ST.totalPrice.toLocaleString() : ''} FCFA</strong></p>
+            <div class="spinner" style="margin:0 auto 16px;width:40px;height:40px;border:4px solid #333;border-top:4px solid #ff2d78;border-radius:50%;animation:spin 1s linear infinite;"></div>
+            <p style="color:#888;font-size:0.85rem;">En attente de confirmation...</p>
+        </div>
+    `;
+    pollPaymentStatus();
+}
+
+async function pollPaymentStatus() {
+    let attempts = 0;
+    const maxAttempts = 60; // 2 minutes max
+    const interval = setInterval(async () => {
+        attempts++;
+        try {
+            const res  = await fetch(API + '/api/payment/status/' + ST.orderId);
+            const data = await res.json();
+            if (data.status === 'paid') {
+                clearInterval(interval);
+                // Stocker les billets et aller à la confirmation
+                if (data.tickets) ST.tickets = data.tickets;
+                showStep(3);
+                loadConfirmation();
+            } else if (data.status === 'failed') {
+                clearInterval(interval);
+                alert('Paiement échoué ou annulé. Veuillez réessayer.');
+                showStep(2);
+                const btn = document.querySelector('#step2 .btn-submit');
+                if (btn) { btn.textContent = 'PAYER MAINTENANT →'; btn.disabled = false; }
+            } else if (attempts >= maxAttempts) {
+                clearInterval(interval);
+                alert('Délai dépassé. Vérifiez votre connexion et réessayez.');
+                showStep(2);
+            }
+        } catch(e) { /* continue polling */ }
+    }, 2000);
 }
 
 function runPaymentAnim() {
