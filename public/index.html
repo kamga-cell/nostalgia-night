@@ -801,30 +801,58 @@
                 </div>
             </div>
 
-            <!-- ✅ Bouton "J'ai payé" — apparaît après clic sur Orange ou MTN -->
-            <div id="paid-confirm-section" style="display:none;text-align:center;margin-bottom:14px;">
-                <div style="font-size:.78rem;color:var(--gray);margin-bottom:10px;letter-spacing:.8px;">
-                    ⬆️ Effectuez le virement ci-dessus, puis confirmez :
-                </div>
-                <button onclick="onPaidConfirmed()"
-                    style="background:#1a2e1a;border:2px solid #25D366;color:#25D366;
-                           font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:2px;
-                           padding:12px 24px;cursor:pointer;width:100%;border-radius:6px;transition:all .2s;"
-                    onmouseover="this.style.background='#25D366';this.style.color='#000'"
-                    onmouseout="this.style.background='#1a2e1a';this.style.color='#25D366'">
-                    ✅ J'AI EFFECTUÉ LE VIREMENT →
-                </button>
-            </div>
+            <!-- ÉTAPE 2b : Référence de transaction — apparaît après clic sur Orange ou MTN -->
+            <div id="txn-section" style="display:none;margin-bottom:16px;">
+                <div style="background:#0a0f0a;border:1px solid rgba(0,255,65,.25);border-radius:8px;padding:16px 18px;">
+                    <div style="font-size:.75rem;color:#00FF41;letter-spacing:2px;font-weight:700;margin-bottom:6px;">
+                        ✅ PAIEMENT INITIÉ — DERNIÈRE ÉTAPE
+                    </div>
+                    <div style="font-size:.78rem;color:var(--gray);margin-bottom:14px;line-height:1.5;">
+                        Après validation de votre code secret, vous recevez un <strong style="color:#fff;">SMS de confirmation</strong> de MTN ou Orange avec une <strong style="color:var(--yellow);">référence de transaction</strong>.<br>
+                        Entrez-la ci-dessous pour prouver votre paiement :
+                    </div>
 
-            <!-- Bouton WhatsApp — masqué jusqu'à confirmation du paiement -->
-            <a id="wa-btn" href="#" target="_blank" style="display:none;text-decoration:none;">
-                <button class="btn-submit" style="background:#25D366;color:#000;width:100%;margin-bottom:6px;" type="button">
-                    💬 ENVOYER MA CONFIRMATION SUR WHATSAPP →
-                </button>
-            </a>
-            <p id="wa-hint" style="display:none;font-size:.72rem;color:var(--gray);text-align:center;margin-bottom:14px;letter-spacing:.8px;">
-                Appuyez pour envoyer le message pré-rempli à l'organisatrice
-            </p>
+                    <!-- Exemple visuel -->
+                    <div style="background:#111;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:.72rem;color:#555;font-style:italic;border-left:3px solid #333;">
+                        Exemple SMS MTN : <span style="color:#aaa;">"Vous avez transféré 5000 FCFA... <strong style="color:var(--yellow);">ID: TXN2620493812</strong>"</span><br>
+                        Exemple SMS Orange : <span style="color:#aaa;">"Transfert réussi... <strong style="color:var(--yellow);">Réf: OM241118.1423.A12345</strong>"</span>
+                    </div>
+
+                    <label style="font-size:.72rem;color:var(--gray);letter-spacing:1.5px;display:block;margin-bottom:6px;">
+                        RÉFÉRENCE / ID DE TRANSACTION *
+                    </label>
+                    <input id="txn-ref-input"
+                           type="text"
+                           placeholder="Ex: TXN2620493812 ou OM241118.1423.A12345"
+                           oninput="onTxnRefInput()"
+                           style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:6px;
+                                  color:#fff;font-family:'Rajdhani',sans-serif;font-size:.95rem;
+                                  padding:12px 14px;margin-bottom:10px;box-sizing:border-box;
+                                  letter-spacing:1px;outline:none;transition:border-color .2s;"
+                           onfocus="this.style.borderColor='var(--yellow)'"
+                           onblur="this.style.borderColor='#333'">
+                    <div id="txn-err" style="display:none;color:#ff4444;font-size:.72rem;margin-bottom:8px;">
+                        ⚠️ Veuillez entrer la référence de votre SMS de confirmation
+                    </div>
+
+                    <!-- Bouton WhatsApp — activé seulement quand référence saisie -->
+                    <a id="wa-btn" href="#" target="_blank" style="text-decoration:none;display:block;">
+                        <button id="wa-btn-inner"
+                                disabled
+                                style="background:#1a2e1a;border:2px solid #444;color:#444;
+                                       font-family:'Bebas Neue',cursive;font-size:1.05rem;letter-spacing:2px;
+                                       padding:13px 20px;cursor:not-allowed;width:100%;border-radius:6px;
+                                       transition:all .3s;" type="button">
+                            💬 ENVOYER MA CONFIRMATION SUR WHATSAPP →
+                        </button>
+                    </a>
+                    <p style="font-size:.68rem;color:var(--gray);text-align:center;margin-top:8px;letter-spacing:.8px;">
+                        Le bouton s'active après saisie de votre référence de transaction
+                    </p>
+                </div>
+            </div>
+            <!-- Fallback hint (non affiché, conservé pour compat) -->
+            <p id="wa-hint" style="display:none;"></p>
 
             <button class="btn-back" onclick="showStep(1)">← MODIFIER</button>
         </div>
@@ -1140,54 +1168,93 @@ function buildPaymentLinks(amount) {
     // MTN MoMo Cameroun    : *126*1*1*683222267*MONTANT#
     document.getElementById('mtn-pay-btn').href = 'tel:*126*1*1*683222267*' + amt + '%23';
 
-    // Réinitialiser l'état : WhatsApp masqué, confirmation masquée
-    document.getElementById('paid-confirm-section').style.display = 'none';
-    document.getElementById('wa-btn').style.display  = 'none';
-    document.getElementById('wa-hint').style.display = 'none';
+    // Réinitialiser : cacher la zone référence, désactiver bouton WA
+    document.getElementById('txn-section').style.display = 'none';
+    document.getElementById('txn-ref-input').value = '';
+    const btn = document.getElementById('wa-btn-inner');
+    if (btn) {
+        btn.disabled = true;
+        btn.style.background = '#1a2e1a';
+        btn.style.borderColor = '#444';
+        btn.style.color = '#444';
+        btn.style.cursor = 'not-allowed';
+    }
 }
 
 // Appelé quand le client clique sur Orange ou MTN
 function onPaymentButtonClicked() {
-    // Attendre 3s (le temps que l'USSD s'ouvre) puis afficher la confirmation
+    // Laisser le temps à l'USSD de s'ouvrir, puis montrer la zone de saisie
     setTimeout(function() {
-        document.getElementById('paid-confirm-section').style.display = 'block';
-        document.getElementById('paid-confirm-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 3000);
+        const section = document.getElementById('txn-section');
+        section.style.display = 'block';
+        section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => document.getElementById('txn-ref-input').focus(), 400);
+    }, 3500);
 }
 
-// Appelé quand le client confirme avoir payé → révèle le bouton WhatsApp
-function onPaidConfirmed() {
-    document.getElementById('paid-confirm-section').style.display = 'none';
-    document.getElementById('wa-btn').style.display  = 'block';
-    document.getElementById('wa-hint').style.display = 'block';
-    document.getElementById('wa-btn').scrollIntoView({ behavior: 'smooth', block: 'center' });
+// Appelé à chaque frappe dans le champ référence
+function onTxnRefInput() {
+    const val = document.getElementById('txn-ref-input').value.trim();
+    const btn = document.getElementById('wa-btn-inner');
+    document.getElementById('txn-err').style.display = 'none';
+
+    if (val.length >= 6) {
+        // Activer le bouton WhatsApp et y injecter la référence
+        btn.disabled = false;
+        btn.style.background = '#25D366';
+        btn.style.borderColor = '#25D366';
+        btn.style.color = '#000';
+        btn.style.cursor = 'pointer';
+        // Mettre à jour le lien WhatsApp avec la référence
+        updateWhatsAppWithRef(val);
+    } else {
+        btn.disabled = true;
+        btn.style.background = '#1a2e1a';
+        btn.style.borderColor = '#444';
+        btn.style.color = '#444';
+        btn.style.cursor = 'not-allowed';
+    }
+}
+
+function updateWhatsAppWithRef(txnRef) {
+    const code      = document.getElementById('res-code').textContent;
+    const prenom    = document.getElementById('f-prenom').value.trim();
+    const nom       = document.getElementById('f-nom').value.trim();
+    const qty       = parseInt(document.getElementById('f-qty').value || 1);
+    const t         = TICKETS[ST.ticket];
+    const total     = t.price * qty;
+
+    const msg = `Bonjour ! 🎉 Je confirme mon paiement NOSTALGIA NIGHT\n\n` +
+                `🎫 Code réservation : ${code}\n` +
+                `👤 Nom : ${prenom} ${nom}\n` +
+                `🎟 ${qty}x ${t.name} = ${fmt(total)} FCFA\n` +
+                `💳 Référence transaction : ${txnRef}\n\n` +
+                `✅ Paiement effectué. Merci de valider mon billet.`;
+    document.getElementById('wa-btn').href =
+        `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
 }
 
 function buildWhatsAppLink(code, prenom, nom, qty, ticketName, total) {
-    const msg = `Bonjour ! 🎉 Je confirme ma réservation NOSTALGIA NIGHT\n\n` +
-                `🎫 Code: ${code}\n` +
-                `👤 ${prenom} ${nom}\n` +
-                `🎟 ${qty}x ${ticketName} = ${fmt(total)} FCFA\n\n` +
-                `✅ J'ai effectué le paiement. Merci de confirmer mon billet.`;
-    const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
+    // L'href WhatsApp est mis à jour dynamiquement par updateWhatsAppWithRef()
+    // dès que l'utilisateur saisit sa référence de transaction.
+    // On stocke juste les paramètres pour le onclick (transition vers l'écran d'attente).
     const waBtn = document.getElementById('wa-btn');
-    waBtn.href = url;
     waBtn.onclick = function() {
-        // Après clic WhatsApp, passer à l'écran d'attente
+        // Vérification finale : la référence doit être saisie
+        const ref = document.getElementById('txn-ref-input').value.trim();
+        if (ref.length < 6) {
+            document.getElementById('txn-err').style.display = 'block';
+            return false;
+        }
+        // Passer à l'écran d'attente après envoi WA
         setTimeout(() => {
-            // Code de réservation
             document.querySelector('.proc-code').textContent = code;
-            // Catégorie
             const catEl = document.getElementById('proc-cat');
             catEl.textContent = ticketName;
             catEl.style.color = ST.ticket === 'VIP' ? 'var(--pink)' : 'var(--cyan)';
-            // Quantité
-            document.getElementById('proc-qty').textContent = qty + ' BILLET' + (qty > 1 ? 'S' : '');
-            // Total
+            document.getElementById('proc-qty').textContent   = qty + ' BILLET' + (qty > 1 ? 'S' : '');
             document.getElementById('proc-total').textContent = fmt(total) + ' FCFA';
-
             showStep('p');
-            // Sauvegarder la réservation en localStorage
             saveReservation(code, prenom, nom, qty, ticketName, total);
         }, 800);
     };

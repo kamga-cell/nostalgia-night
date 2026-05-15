@@ -149,11 +149,16 @@ router.post('/confirm/:orderId', authAdmin, async (req, res) => {
     }
 
     res.json({
-        success: true,
-        orderId: order.id,
-        tickets: ticketIds,
+        success:  true,
+        orderId:  order.id,
+        tickets:  ticketIds,
         emailSent,
-        message: `Paiement confirmé — ${ticketIds.length} billet(s) généré(s) et envoyé(s) par email`
+        phone:    order.phone,
+        prenom:   order.prenom,
+        nom:      order.nom,
+        category: order.category,
+        qty:      order.qty,
+        message:  `Paiement confirmé — ${ticketIds.length} billet(s) généré(s)`
     });
 });
 

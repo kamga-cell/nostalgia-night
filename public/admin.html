@@ -317,20 +317,111 @@ async function confirmPayment(orderId) {
         const d = await r.json();
         if (!r.ok) throw new Error(d.error || 'Erreur');
 
-        // Supprimer la ligne
+        // Marquer la ligne en vert et retirer après animation
         const row = document.getElementById('row-' + orderId);
         if (row) {
             row.style.background = 'rgba(0,255,65,.08)';
-            setTimeout(() => { row.remove(); loadAll(); }, 1200);
+            setTimeout(() => { row.remove(); loadAll(); }, 1500);
         }
 
-        const emailMsg = d.emailSent ? '📧 Billet envoyé par email !' : '⚠️ Email non envoyé (vérifiez la config SMTP)';
-        showToast(`✅ Paiement confirmé — ${d.tickets?.length || 1} billet(s) généré(s)\n${emailMsg}`);
+        // Afficher la popup d'envoi billet
+        showTicketSendPopup(d);
+
     } catch(e) {
         btn.textContent = '✅ CONFIRMER'; btn.disabled = false;
         showToast('❌ Erreur : ' + e.message, true);
     }
 }
+
+function showTicketSendPopup(d) {
+    // Récupérer les infos de la commande depuis la ligne du tableau
+    const order = _lastConfirmedOrder;
+    const baseUrl = window.location.origin;
+    const tickets = d.tickets || [];
+
+    // Construire les liens PDF
+    const pdfLinks = tickets.map(id =>
+        `${baseUrl}/api/tickets/download/${id}`
+    );
+
+    // Message WhatsApp pour envoyer au client
+    const phone = d.phone ? '237' + d.phone.replace(/^(\+?237|0)/, '').replace(/\D/g, '') : null;
+    const ticketList = tickets.map((id, i) =>
+        `🎫 Billet ${i+1} : ${baseUrl}/api/tickets/download/${id}`
+    ).join('\n');
+    const waMsg = `Bonjour ${d.prenom || ''} ! 🎉\n\n` +
+        `Votre paiement NOSTALGIA NIGHT a été confirmé.\n` +
+        `Voici vos billets — téléchargez et présentez le QR Code à l'entrée :\n\n` +
+        ticketList + '\n\n' +
+        `📅 18 Juillet 2026 · Yaoundé, ODZA\n` +
+        `⚠️ Billet valable pour 1 personne`;
+    const waUrl = phone
+        ? `https://wa.me/${phone}?text=${encodeURIComponent(waMsg)}`
+        : null;
+
+    // Toast + popup
+    showToast(`✅ ${tickets.length} billet(s) généré(s) — Envoyez via WhatsApp ci-dessous`);
+
+    // Popup overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'ticket-popup';
+    overlay.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;
+        display:flex;align-items:center;justify-content:center;padding:20px;`;
+    overlay.innerHTML = `
+        <div style="background:#0f0f0f;border:1px solid var(--green);border-radius:12px;
+                    padding:28px 24px;max-width:480px;width:100%;position:relative;">
+            <div style="font-family:'Bebas Neue',cursive;font-size:1.5rem;color:var(--green);
+                        letter-spacing:3px;margin-bottom:4px;">✅ PAIEMENT CONFIRMÉ</div>
+            <div style="color:#888;font-size:.82rem;margin-bottom:20px;">
+                ${tickets.length} billet(s) généré(s) — commande ${d.orderId}
+            </div>
+
+            <!-- Liens PDF -->
+            <div style="background:#0a0a0a;border:1px solid #222;border-radius:8px;
+                        padding:14px 16px;margin-bottom:16px;">
+                <div style="font-size:.7rem;color:#666;letter-spacing:1.5px;margin-bottom:10px;">
+                    📥 LIENS DE TÉLÉCHARGEMENT PDF
+                </div>
+                ${pdfLinks.map((url, i) => `
+                    <a href="${url}" target="_blank"
+                       style="display:block;padding:8px 12px;background:#1a1a1a;border:1px solid #333;
+                              border-radius:4px;color:var(--cyan);font-size:.82rem;margin-bottom:6px;
+                              text-decoration:none;font-family:'Rajdhani',sans-serif;
+                              word-break:break-all;">
+                        🎫 Billet ${i+1} — ${tickets[i]}
+                    </a>`).join('')}
+            </div>
+
+            <!-- Bouton WhatsApp direct client -->
+            ${waUrl ? `
+            <a href="${waUrl}" target="_blank" style="text-decoration:none;display:block;margin-bottom:12px;">
+                <button style="width:100%;background:#25D366;color:#000;border:none;border-radius:8px;
+                               font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:2px;
+                               padding:14px;cursor:pointer;">
+                    📲 ENVOYER LE BILLET AU CLIENT VIA WHATSAPP →
+                </button>
+            </a>
+            <p style="color:#555;font-size:.72rem;text-align:center;margin-bottom:12px;">
+                Ouvre WhatsApp avec le lien du billet pré-rempli pour le client
+            </p>` : `
+            <div style="color:#888;font-size:.82rem;margin-bottom:12px;">
+                📲 Envoyez manuellement les liens PDF au client via WhatsApp
+            </div>`}
+
+            <button onclick="document.getElementById('ticket-popup').remove()"
+                    style="width:100%;background:transparent;border:1px solid #444;color:#888;
+                           font-family:'Bebas Neue',cursive;font-size:.95rem;letter-spacing:2px;
+                           padding:10px;border-radius:6px;cursor:pointer;">
+                FERMER
+            </button>
+        </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) overlay.remove();
+    });
+}
+
+let _lastConfirmedOrder = null;
 
 async function doScan() {
     const ticketId = document.getElementById('scan-input').value.trim().toUpperCase();
