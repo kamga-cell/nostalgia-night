@@ -1,4 +1,4 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 const express    = require('express');
 const cors       = require('cors');
 const path       = require('path');
@@ -26,8 +26,9 @@ app.get('/confirmation', (req, res) => res.sendFile(path.join(__dirname, 'public
 app.get('/admin',        (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
 app.listen(PORT, () => {
-    console.log(`\n🎉 NOSTALGIA NIGHT — Serveur démarré`);
-    console.log(`🌐 Site          : http://localhost:${PORT}`);
-    console.log(`📷 Scanner staff : http://localhost:${PORT}/scanner`);
-    console.log(`🔧 API           : http://localhost:${PORT}/api\n`);
+    console.log(`\nðŸŽ‰ NOSTALGIA NIGHT â€” Serveur dÃ©marrÃ©`);
+    console.log(`ðŸŒ Site          : http://localhost:${PORT}`);
+    console.log(`ðŸ“· Scanner staff : http://localhost:${PORT}/scanner`);
+    console.log(`ðŸ”§ API           : http://localhost:${PORT}/api\n`);
 });
+
