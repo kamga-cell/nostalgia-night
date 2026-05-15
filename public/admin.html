@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOSTALGIA NIGHT — Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --pink:#FF1493; --cyan:#00FFFF; --yellow:#FFD700; --green:#00FF41; --dark:#050505; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background:var(--dark); color:#fff; font-family:'Rajdhani',sans-serif; min-height:100vh; padding:0; }
+        h1,h2,h3 { font-family:'Bebas Neue',cursive; letter-spacing:2px; }
+
+        /* LOGIN */
+        #login-screen {
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            min-height:100vh; padding:24px;
+        }
+        .login-box {
+            background:#0f0f0f; border:1px solid rgba(255,20,147,.3);
+            border-radius:12px; padding:40px 32px; width:100%; max-width:380px; text-align:center;
+        }
+        .login-title { font-size:1.8rem; color:var(--pink); margin-bottom:6px; }
+        .login-sub { color:#666; font-size:.85rem; letter-spacing:1px; margin-bottom:28px; }
+        .input { width:100%; background:#1a1a1a; border:1px solid #333; border-radius:6px; color:#fff;
+                 font-family:'Rajdhani',sans-serif; font-size:1rem; padding:12px 16px; margin-bottom:16px; }
+        .input:focus { outline:none; border-color:var(--pink); }
+        .btn-login { width:100%; background:var(--pink); color:#000; border:none; border-radius:6px;
+                     font-family:'Bebas Neue',cursive; font-size:1.1rem; letter-spacing:3px;
+                     padding:14px; cursor:pointer; transition:all .2s; }
+        .btn-login:hover { background:var(--cyan); }
+        .err { color:#ff4444; font-size:.82rem; margin-top:8px; display:none; }
+
+        /* DASHBOARD */
+        #dashboard { display:none; }
+        .top-bar {
+            background:#0a0a0a; border-bottom:1px solid rgba(255,20,147,.2);
+            padding:16px 24px; display:flex; justify-content:space-between; align-items:center;
+            position:sticky; top:0; z-index:100;
+        }
+        .top-title { font-size:1.3rem; color:var(--pink); }
+        .btn-logout { background:transparent; border:1px solid #444; color:#888;
+                      font-family:'Rajdhani',sans-serif; font-size:.85rem; padding:6px 14px;
+                      cursor:pointer; border-radius:4px; }
+        .btn-logout:hover { border-color:var(--pink); color:var(--pink); }
+
+        .content { padding:24px; max-width:1100px; margin:0 auto; }
+
+        /* STATS */
+        .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:32px; }
+        .stat-card {
+            background:#0f0f0f; border:1px solid #222; border-radius:10px; padding:18px 16px; text-align:center;
+        }
+        .stat-val { font-family:'Bebas Neue',cursive; font-size:2.2rem; }
+        .stat-lbl { font-size:.72rem; color:#666; letter-spacing:2px; margin-top:4px; }
+        .pink { color:var(--pink); } .cyan { color:var(--cyan); } .yellow { color:var(--yellow); } .green { color:var(--green); }
+
+        /* TABS */
+        .tabs { display:flex; gap:0; margin-bottom:20px; border-bottom:1px solid #222; }
+        .tab { background:transparent; border:none; color:#666; font-family:'Bebas Neue',cursive;
+               font-size:1rem; letter-spacing:2px; padding:12px 20px; cursor:pointer; border-bottom:2px solid transparent; }
+        .tab.active { color:var(--pink); border-bottom-color:var(--pink); }
+
+        /* TABLE */
+        .table-wrap { overflow-x:auto; }
+        table { width:100%; border-collapse:collapse; font-size:.88rem; }
+        th { background:#0f0f0f; color:#666; font-family:'Bebas Neue',cursive; letter-spacing:1.5px;
+             padding:10px 12px; text-align:left; border-bottom:1px solid #222; white-space:nowrap; }
+        td { padding:10px 12px; border-bottom:1px solid #151515; vertical-align:middle; }
+        tr:hover td { background:rgba(255,20,147,.04); }
+        .badge {
+            display:inline-block; padding:3px 10px; border-radius:20px; font-size:.72rem;
+            font-family:'Bebas Neue',cursive; letter-spacing:1px;
+        }
+        .badge-pending { background:rgba(255,215,0,.15); color:var(--yellow); border:1px solid rgba(255,215,0,.3); }
+        .badge-paid    { background:rgba(0,255,65,.15);  color:var(--green);  border:1px solid rgba(0,255,65,.3); }
+        .badge-classic { background:rgba(0,255,255,.1);  color:var(--cyan); }
+        .badge-vip     { background:rgba(255,20,147,.15); color:var(--pink); }
+        .btn-confirm {
+            background:var(--green); color:#000; border:none; border-radius:4px;
+            font-family:'Bebas Neue',cursive; font-size:.85rem; letter-spacing:1px;
+            padding:6px 14px; cursor:pointer; white-space:nowrap; transition:all .2s;
+        }
+        .btn-confirm:hover { opacity:.85; transform:scale(1.03); }
+        .btn-confirm:disabled { background:#333; color:#666; cursor:not-allowed; transform:none; }
+        .empty-msg { text-align:center; padding:40px; color:#444; font-size:.9rem; letter-spacing:1px; }
+
+        /* TOAST */
+        #toast {
+            position:fixed; bottom:24px; right:24px; background:#0f0f0f;
+            border:1px solid var(--green); border-radius:8px; padding:14px 20px;
+            font-size:.88rem; color:var(--green); display:none; z-index:999;
+            animation:fadeIn .3s ease;
+        }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+        .refresh-btn {
+            background:transparent; border:1px solid #333; color:#666; border-radius:4px;
+            font-family:'Rajdhani',sans-serif; font-size:.82rem; padding:5px 12px;
+            cursor:pointer; margin-left:12px;
+        }
+        .refresh-btn:hover { border-color:var(--cyan); color:var(--cyan); }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+    <div class="login-box">
+        <h1 class="login-title">ADMIN PANEL</h1>
+        <p class="login-sub">NOSTALGIA NIGHT · GESTION RÉSERVATIONS</p>
+        <input class="input" id="pwd-input" type="password" placeholder="Mot de passe admin" onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="btn-login" onclick="doLogin()">ACCÉDER →</button>
+        <div class="err" id="login-err">Mot de passe incorrect</div>
+    </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+    <div class="top-bar">
+        <span class="top-title">🎛 NOSTALGIA NIGHT — ADMIN</span>
+        <div>
+            <span id="auto-refresh-lbl" style="font-size:.75rem;color:#444;margin-right:12px;">Auto-refresh: ON</span>
+            <button class="btn-logout" onclick="logout()">DÉCONNEXION</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <!-- Stats -->
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card"><div class="stat-val yellow" id="s-pending">—</div><div class="stat-lbl">EN ATTENTE</div></div>
+            <div class="stat-card"><div class="stat-val green"  id="s-paid">—</div><div class="stat-lbl">CONFIRMÉES</div></div>
+            <div class="stat-card"><div class="stat-val cyan"   id="s-classic">—</div><div class="stat-lbl">PASS CLASSIC</div></div>
+            <div class="stat-card"><div class="stat-val pink"   id="s-vip">—</div><div class="stat-lbl">PASS VIP</div></div>
+            <div class="stat-card"><div class="stat-val yellow" id="s-revenue">—</div><div class="stat-lbl">RECETTES (FCFA)</div></div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('pending')">⏳ EN ATTENTE <span id="pending-count" style="color:var(--yellow)"></span></button>
+            <button class="tab" onclick="switchTab('all')">📋 TOUTES LES RÉSERVATIONS</button>
+            <button class="tab" onclick="switchTab('scan')">📷 SCANNER</button>
+            <button class="refresh-btn" onclick="loadAll()">↻ Actualiser</button>
+        </div>
+
+        <!-- Réservations en attente -->
+        <div id="tab-pending">
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th>CODE</th><th>NOM</th><th>EMAIL</th><th>TÉL</th>
+                        <th>CATÉGORIE</th><th>QTÉ</th><th>MONTANT</th><th>DATE</th><th>ACTION</th>
+                    </tr></thead>
+                    <tbody id="pending-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Toutes les réservations -->
+        <div id="tab-all" style="display:none;">
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th>CODE</th><th>NOM</th><th>EMAIL</th>
+                        <th>CATÉGORIE</th><th>QTÉ</th><th>MONTANT</th><th>STATUT</th><th>DATE</th>
+                    </tr></thead>
+                    <tbody id="all-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Scanner -->
+        <div id="tab-scan" style="display:none;max-width:460px;">
+            <p style="color:#666;font-size:.85rem;letter-spacing:1px;margin-bottom:16px;">
+                Entrez un code de billet manuellement ou ouvrez le scanner QR.
+            </p>
+            <div style="display:flex;gap:10px;margin-bottom:16px;">
+                <input class="input" id="scan-input" placeholder="Ex: NN-X4K2P-ABCDE"
+                       style="flex:1;margin:0;" onkeydown="if(event.key==='Enter')doScan()">
+                <button class="btn-confirm" onclick="doScan()">VALIDER</button>
+            </div>
+            <div id="scan-result" style="display:none;"></div>
+            <a href="/scanner" target="_blank" style="display:inline-block;margin-top:16px;">
+                <button class="btn-confirm" style="background:var(--cyan);">📷 OUVRIR SCANNER QR</button>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+const API = '';
+let ADMIN_PWD = '';
+let autoRefreshInterval = null;
+
+function doLogin() {
+    const pwd = document.getElementById('pwd-input').value.trim();
+    if (!pwd) return;
+    ADMIN_PWD = pwd;
+    // Vérifier en faisant un appel API
+    fetch(API + '/api/admin/stats', { headers: { 'x-admin-password': pwd } })
+        .then(r => {
+            if (r.status === 401) throw new Error('wrong');
+            return r.json();
+        })
+        .then(() => {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            loadAll();
+            // Auto-refresh toutes les 30s
+            autoRefreshInterval = setInterval(loadAll, 30000);
+        })
+        .catch(() => {
+            document.getElementById('login-err').style.display = 'block';
+        });
+}
+
+function logout() {
+    ADMIN_PWD = '';
+    clearInterval(autoRefreshInterval);
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('pwd-input').value = '';
+}
+
+function authHeaders() {
+    return { 'Content-Type': 'application/json', 'x-admin-password': ADMIN_PWD };
+}
+
+async function loadAll() {
+    await Promise.all([loadStats(), loadPending(), loadAllOrders()]);
+}
+
+async function loadStats() {
+    try {
+        const r = await fetch(API + '/api/admin/stats', { headers: authHeaders() });
+        const d = await r.json();
+        document.getElementById('s-pending').textContent = d.orders?.pending_orders || 0;
+        document.getElementById('s-paid').textContent    = d.orders?.paid_orders || 0;
+        document.getElementById('s-classic').textContent = d.orders?.classic_sold || 0;
+        document.getElementById('s-vip').textContent     = d.orders?.vip_sold || 0;
+        document.getElementById('s-revenue').textContent = fmt(d.orders?.total_revenue || 0);
+    } catch(e) {}
+}
+
+async function loadPending() {
+    try {
+        const r = await fetch(API + '/api/admin/reservations', { headers: authHeaders() });
+        const rows = await r.json();
+        const count = rows.length;
+        document.getElementById('pending-count').textContent = count > 0 ? ` (${count})` : '';
+
+        const tbody = document.getElementById('pending-body');
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="9" class="empty-msg">Aucune réservation en attente ✅</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(o => `
+            <tr id="row-${o.id}">
+                <td style="font-family:'Bebas Neue',cursive;color:var(--cyan);letter-spacing:2px;font-size:.95rem;">${o.id}</td>
+                <td><strong>${o.prenom} ${o.nom.toUpperCase()}</strong></td>
+                <td style="color:#888;font-size:.82rem;">${o.email}</td>
+                <td style="color:#888;">${o.phone}</td>
+                <td><span class="badge badge-${o.category.toLowerCase()}">${o.category}</span></td>
+                <td style="text-align:center;">${o.qty}</td>
+                <td style="color:var(--yellow);font-weight:700;">${fmt(o.total_price)} FCFA</td>
+                <td style="color:#555;font-size:.78rem;">${formatDate(o.created_at)}</td>
+                <td>
+                    <button class="btn-confirm" id="btn-${o.id}" onclick="confirmPayment('${o.id}')">
+                        ✅ CONFIRMER
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch(e) {}
+}
+
+async function loadAllOrders() {
+    try {
+        const r = await fetch(API + '/api/admin/orders', { headers: authHeaders() });
+        const rows = await r.json();
+        const tbody = document.getElementById('all-body');
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-msg">Aucune réservation</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(o => `
+            <tr>
+                <td style="font-family:'Bebas Neue',cursive;color:var(--cyan);letter-spacing:2px;font-size:.9rem;">${o.id}</td>
+                <td>${o.prenom} ${o.nom.toUpperCase()}</td>
+                <td style="color:#888;font-size:.82rem;">${o.email}</td>
+                <td><span class="badge badge-${o.category.toLowerCase()}">${o.category}</span></td>
+                <td style="text-align:center;">${o.qty}</td>
+                <td style="color:var(--yellow);">${fmt(o.total_price)} FCFA</td>
+                <td><span class="badge ${o.status==='paid'?'badge-paid':'badge-pending'}">${o.status==='paid'?'CONFIRMÉ':'EN ATTENTE'}</span></td>
+                <td style="color:#555;font-size:.78rem;">${formatDate(o.created_at)}</td>
+            </tr>
+        `).join('');
+    } catch(e) {}
+}
+
+async function confirmPayment(orderId) {
+    const btn = document.getElementById('btn-' + orderId);
+    btn.textContent = '...'; btn.disabled = true;
+    try {
+        const r = await fetch(API + '/api/admin/confirm/' + orderId, {
+            method: 'POST', headers: authHeaders()
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Erreur');
+
+        // Supprimer la ligne
+        const row = document.getElementById('row-' + orderId);
+        if (row) {
+            row.style.background = 'rgba(0,255,65,.08)';
+            setTimeout(() => { row.remove(); loadAll(); }, 1200);
+        }
+
+        const emailMsg = d.emailSent ? '📧 Billet envoyé par email !' : '⚠️ Email non envoyé (vérifiez la config SMTP)';
+        showToast(`✅ Paiement confirmé — ${d.tickets?.length || 1} billet(s) généré(s)\n${emailMsg}`);
+    } catch(e) {
+        btn.textContent = '✅ CONFIRMER'; btn.disabled = false;
+        showToast('❌ Erreur : ' + e.message, true);
+    }
+}
+
+async function doScan() {
+    const ticketId = document.getElementById('scan-input').value.trim().toUpperCase();
+    if (!ticketId) return;
+    try {
+        const r = await fetch(API + '/api/admin/scan', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ ticketId })
+        });
+        const d = await r.json();
+        const resultDiv = document.getElementById('scan-result');
+        resultDiv.style.display = 'block';
+        const colors = { valid:'#00FF41', already_used:'#FF6600', invalid:'#FF4444' };
+        const icons  = { valid:'✅', already_used:'⚠️', invalid:'❌' };
+        resultDiv.style.cssText = `display:block;padding:16px;border-radius:8px;border:1px solid ${colors[d.result]};background:rgba(0,0,0,.4);`;
+        resultDiv.innerHTML = `
+            <div style="font-size:1.5rem;margin-bottom:8px;">${icons[d.result]}</div>
+            <div style="color:${colors[d.result]};font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:2px;">${d.message}</div>
+            ${d.ticket ? `<div style="margin-top:8px;color:#ccc;font-size:.85rem;">${d.ticket.nom} · ${d.ticket.category}</div>` : ''}
+        `;
+        document.getElementById('scan-input').value = '';
+    } catch(e) { showToast('Erreur scan: ' + e.message, true); }
+}
+
+function switchTab(tab) {
+    ['pending','all','scan'].forEach(t => {
+        document.getElementById('tab-'+t).style.display = t===tab ? 'block' : 'none';
+    });
+    document.querySelectorAll('.tab').forEach((el,i) => {
+        el.classList.toggle('active', ['pending','all','scan'][i]===tab);
+    });
+}
+
+function showToast(msg, isError=false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.borderColor = isError ? '#FF4444' : 'var(--green)';
+    t.style.color = isError ? '#FF4444' : 'var(--green)';
+    t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 4000);
+}
+
+function fmt(n) { return Number(n||0).toLocaleString('fr-FR'); }
+function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleString('fr-FR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+</script>
+</body>
+</html>

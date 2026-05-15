@@ -694,12 +694,13 @@
             <button class="btn-submit" onclick="step1Next()">CONTINUER →</button>
         </div>
 
-        <!-- ── ÉTAPE 2 : Paiement ── -->
+        <!-- ── ÉTAPE 2 : Confirmation réservation + instructions paiement ── -->
         <div id="step2" style="display:none;">
-            <h2 class="modal-title">MODE DE <span class="neon-yellow">PAIEMENT</span></h2>
-            <p class="modal-sub">CHOISISSEZ VOTRE OPÉRATEUR MOBILE</p>
+            <h2 class="modal-title">RÉSERVATION <span class="neon-cyan">CONFIRMÉE !</span></h2>
+            <p class="modal-sub">EFFECTUEZ LE PAIEMENT POUR RECEVOIR VOTRE BILLET</p>
 
-            <div class="summary-bar">
+            <!-- Récap commande -->
+            <div class="summary-bar" style="margin-bottom:18px;">
                 <div>
                     <div class="summary-bar-name" id="sb2-name">PASS CLASSIC</div>
                     <div class="summary-bar-detail" id="sb2-detail">1 billet · NOSTALGIA NIGHT</div>
@@ -707,44 +708,60 @@
                 <div class="summary-bar-price neon-pink" id="sb2-total">5 000 FCFA</div>
             </div>
 
-            <div class="pay-methods">
-                <div class="pay-method" id="pm-mtn" onclick="pickPayment('MTN')">
-                    <div class="pay-icon">🟡</div>
-                    <div class="pay-name mtn-label">MTN MOMO</div>
-                    <div class="pay-sub">Mobile Money</div>
+            <!-- Code de réservation -->
+            <div style="background:#0a0a15;border:1px solid rgba(0,255,255,.3);border-radius:8px;padding:14px 18px;margin-bottom:18px;text-align:center;">
+                <div style="font-size:.72rem;color:var(--gray);letter-spacing:2px;margin-bottom:6px;">VOTRE CODE DE RÉSERVATION</div>
+                <div class="neon-cyan" id="res-code" style="font-family:'Bebas Neue',cursive;font-size:1.8rem;letter-spacing:6px;">—</div>
+                <div style="font-size:.7rem;color:var(--gray);margin-top:4px;">Conservez ce code — il sera demandé pour confirmer votre paiement</div>
+            </div>
+
+            <!-- Instructions paiement -->
+            <div style="background:#0d0d0d;border:1px solid rgba(255,215,0,.25);border-radius:8px;padding:16px 18px;margin-bottom:18px;">
+                <div style="font-size:.75rem;color:var(--yellow);letter-spacing:2px;margin-bottom:12px;font-weight:700;">📲 EFFECTUEZ LE PAIEMENT :</div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                    <div style="flex:1;min-width:140px;background:#111;border-radius:6px;padding:12px;border:1px solid rgba(255,165,0,.3);">
+                        <div style="font-size:.7rem;color:var(--gray);margin-bottom:4px;">🟠 ORANGE MONEY</div>
+                        <div style="color:#FF6600;font-family:'Bebas Neue',cursive;font-size:1.3rem;letter-spacing:3px;">691 464 539</div>
+                        <div style="font-size:.65rem;color:var(--gray);">Nom: NKOLO SANDRINE</div>
+                    </div>
+                    <div style="flex:1;min-width:140px;background:#111;border-radius:6px;padding:12px;border:1px solid rgba(255,204,0,.3);">
+                        <div style="font-size:.7rem;color:var(--gray);margin-bottom:4px;">🟡 MTN MOMO</div>
+                        <div style="color:#FFCC00;font-family:'Bebas Neue',cursive;font-size:1.3rem;letter-spacing:3px;">683 222 267</div>
+                        <div style="font-size:.65rem;color:var(--gray);">Nom: NKOLO SANDRINE</div>
+                    </div>
                 </div>
-                <div class="pay-method" id="pm-orange" onclick="pickPayment('ORANGE')">
-                    <div class="pay-icon">🟠</div>
-                    <div class="pay-name orange-label">ORANGE MONEY</div>
-                    <div class="pay-sub">Mobile Money</div>
+                <div style="margin-top:12px;font-size:.72rem;color:var(--gray);letter-spacing:.8px;">
+                    ⚠️ Envoyez exactement <strong id="pay-amount-txt" style="color:var(--yellow);">5 000 FCFA</strong> — mentionnez votre code de réservation dans le motif
                 </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label" id="pay-phone-lbl">NUMÉRO DE PAIEMENT *</label>
-                <input class="form-input" id="f-pay-phone" type="tel" placeholder="6XX XXX XXX">
-                <div style="font-size:.72rem;color:var(--gray);margin-top:6px;letter-spacing:.8px;">
-                    💡 Vous recevrez une notification sur votre téléphone pour confirmer
-                </div>
-            </div>
-            <div class="err-msg" id="e-pay" style="margin-bottom:12px;">Sélectionnez un opérateur et entrez votre numéro</div>
+            <!-- Bouton WhatsApp -->
+            <a id="wa-btn" href="#" target="_blank" style="display:block;text-decoration:none;">
+                <button class="btn-submit" style="background:#25D366;color:#000;width:100%;margin-bottom:10px;" type="button">
+                    💬 CONFIRMER MON PAIEMENT SUR WHATSAPP →
+                </button>
+            </a>
+            <p style="font-size:.72rem;color:var(--gray);text-align:center;margin-bottom:14px;letter-spacing:.8px;">
+                Cliquez après avoir effectué le paiement — envoyez le message WhatsApp pré-rempli à l'organisatrice
+            </p>
 
-            <button class="btn-submit" onclick="step2Pay()">PAYER MAINTENANT →</button>
-            <button class="btn-back" onclick="showStep(1)">← RETOUR</button>
+            <button class="btn-back" onclick="showStep(1)">← MODIFIER</button>
         </div>
 
-        <!-- ── TRAITEMENT ── -->
+        <!-- ── ÉTAPE "EN ATTENTE" ── -->
         <div id="step-proc" style="display:none;">
-            <div class="proc-wrap">
-                <div class="spinner"></div>
-                <div class="proc-title">PAIEMENT EN <span class="neon-pink">COURS</span></div>
-                <p class="proc-sub">Ne fermez pas cette page...</p>
-                <div class="proc-steps">
-                    <div class="proc-step" id="ps1">⏳ Initialisation de la transaction...</div>
-                    <div class="proc-step" id="ps2">📱 Envoi de la notification USSD...</div>
-                    <div class="proc-step" id="ps3">✅ Confirmation du paiement reçue...</div>
-                    <div class="proc-step" id="ps4">🎫 Génération de votre billet numérique...</div>
+            <div class="proc-wrap" style="text-align:center;padding:20px 0;">
+                <div style="font-size:3.5rem;margin-bottom:16px;">⏳</div>
+                <div class="proc-title">EN ATTENTE DE <span class="neon-yellow">CONFIRMATION</span></div>
+                <p style="color:var(--gray);margin:12px 0 20px;font-size:.9rem;letter-spacing:.8px;">
+                    Votre réservation est enregistrée.<br>Dès confirmation de votre paiement par l'organisatrice,<br>vous recevrez votre billet par <strong style="color:var(--cyan)">email</strong>.
+                </p>
+                <div style="background:#0a0a15;border:1px solid rgba(0,255,255,.3);border-radius:8px;padding:12px 18px;display:inline-block;margin-bottom:20px;">
+                    <div style="font-size:.7rem;color:var(--gray);margin-bottom:4px;">CODE DE RÉSERVATION</div>
+                    <div class="neon-cyan proc-code" style="font-family:'Bebas Neue',cursive;font-size:1.6rem;letter-spacing:6px;">—</div>
                 </div>
+                <p style="font-size:.72rem;color:var(--gray);">Délai de confirmation : 24h max · <span style="color:var(--pink)">📞 +237 6 99 58 43 55</span></p>
+                <button class="btn-close-m" onclick="closeModal()" style="margin-top:20px;">FERMER</button>
             </div>
         </div>
 
@@ -823,11 +840,15 @@ const TICKETS = {
 
 const ST = {
     ticket:   'CLASSIC',
-    payment:  null,
     orderId:  null,
     ticketIds: [],
-    simulated: false
+    reservationCode: null,
+    totalPrice: 0,
+    prenom: '', nom: '', qty: 1
 };
+
+// Numéro WhatsApp de l'organisatrice (sans +)
+const WA_NUMBER = '237699584355';
 
 // ════════════════════════════════
 // COUNTDOWN
@@ -947,18 +968,27 @@ async function step1Next() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prenom, nom, email, phone,
                                    category: ST.ticket, qty,
-                                   payment_method: 'MTN',
+                                   payment_method: 'ORANGE',
                                    payment_phone: phone })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Erreur serveur');
 
-        ST.orderId = data.orderId;
+        ST.orderId  = data.orderId;
+        ST.prenom   = prenom; ST.nom = nom; ST.qty = qty;
+        ST.reservationCode = data.orderId;
         const t = TICKETS[ST.ticket];
+        ST.totalPrice = t.price * qty;
+
+        // Mettre à jour le récap étape 2
         document.getElementById('sb2-name').textContent   = t.name;
         document.getElementById('sb2-detail').textContent = qty + ' billet(s) · NOSTALGIA NIGHT';
-        document.getElementById('sb2-total').textContent  = fmt(t.price * qty) + ' FCFA';
-        document.getElementById('f-pay-phone').value      = phone;
+        document.getElementById('sb2-total').textContent  = fmt(ST.totalPrice) + ' FCFA';
+        document.getElementById('res-code').textContent   = data.orderId;
+        document.getElementById('pay-amount-txt').textContent = fmt(ST.totalPrice) + ' FCFA';
+
+        // Construire le lien WhatsApp
+        buildWhatsAppLink(data.orderId, prenom, nom, qty, t.name, ST.totalPrice);
         showStep(2);
     } catch(err) {
         alert('Erreur : ' + err.message);
@@ -967,93 +997,37 @@ async function step1Next() {
     }
 }
 
+function buildWhatsAppLink(code, prenom, nom, qty, ticketName, total) {
+    const msg = `Bonjour ! 🎉 Je confirme ma réservation NOSTALGIA NIGHT\n\n` +
+                `🎫 Code: ${code}\n` +
+                `👤 ${prenom} ${nom}\n` +
+                `🎟 ${qty}x ${ticketName} = ${fmt(total)} FCFA\n\n` +
+                `✅ J'ai effectué le paiement. Merci de confirmer mon billet.`;
+    const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
+    const waBtn = document.getElementById('wa-btn');
+    waBtn.href = url;
+    waBtn.onclick = function() {
+        // Après clic WhatsApp, passer à l'écran d'attente
+        setTimeout(() => {
+            document.querySelector('.proc-code').textContent = code;
+            showStep('p');
+            // Sauvegarder la réservation en localStorage
+            saveReservation(code, prenom, nom, qty, ticketName, total);
+        }, 800);
+    };
+}
+
+function saveReservation(code, prenom, nom, qty, ticketName, total) {
+    const reservations = JSON.parse(localStorage.getItem('nn_reservations') || '[]');
+    reservations.unshift({ code, prenom, nom, qty, ticketName, total, date: new Date().toISOString(), status: 'pending' });
+    localStorage.setItem('nn_reservations', JSON.stringify(reservations.slice(0, 20)));
+}
+
 // ════════════════════════════════
-// STEP 2 : Paiement
+// STEP 2 : Réservation confirmée
+// (plus de paiement en ligne)
 // ════════════════════════════════
-function pickPayment(method) {
-    ST.payment = method;
-    document.getElementById('pm-mtn').className    = 'pay-method' + (method==='MTN'    ? ' selected-mtn'    : '');
-    document.getElementById('pm-orange').className = 'pay-method' + (method==='ORANGE' ? ' selected-orange' : '');
-    document.getElementById('pay-phone-lbl').textContent =
-        method === 'MTN' ? 'NUMERO MTN MOMO *' : 'NUMERO ORANGE MONEY *';
-    document.getElementById('e-pay').style.display = 'none';
-}
 
-async function step2Pay() {
-    const payPhone = document.getElementById('f-pay-phone').value.trim();
-    if (!ST.payment || !/^\d{9,}$/.test(payPhone.replace(/\s/g,''))) {
-        document.getElementById('e-pay').style.display = 'block';
-        return;
-    }
-    document.getElementById('e-pay').style.display = 'none';
-
-    const btn = document.querySelector('#step2 .btn-submit');
-    btn.textContent = 'ENVOI...'; btn.disabled = true;
-
-    try {
-        const res  = await fetch(API + '/api/payment/initiate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId: ST.orderId, phone: payPhone })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Erreur paiement');
-
-        ST.payPhone = payPhone;
-        // Afficher l'écran "vérifie ton téléphone" et poller le statut
-        showUssdWaiting(data);
-    } catch(err) {
-        alert('Erreur paiement : ' + err.message);
-        btn.textContent = 'PAYER MAINTENANT →'; btn.disabled = false;
-    }
-}
-
-function showUssdWaiting(data) {
-    showStep('proc');
-    // Mettre à jour le message de l'étape de traitement
-    const procDiv = document.getElementById('step-proc');
-    procDiv.innerHTML = `
-        <div style="text-align:center;padding:20px 0;">
-            <div style="font-size:3rem;margin-bottom:16px;">📱</div>
-            <h3 style="color:#ff2d78;margin-bottom:12px;">VÉRIFIEZ VOTRE TÉLÉPHONE !</h3>
-            <p style="color:#ccc;margin-bottom:8px;">Un message USSD a été envoyé au</p>
-            <p style="color:#00fff7;font-size:1.2rem;font-weight:bold;margin-bottom:16px;">${ST.payPhone}</p>
-            <p style="color:#ccc;margin-bottom:20px;">Composez votre PIN ${ST.payment} pour confirmer le paiement de <strong style="color:#ffff00">${ST.totalPrice ? ST.totalPrice.toLocaleString() : ''} FCFA</strong></p>
-            <div class="spinner" style="margin:0 auto 16px;width:40px;height:40px;border:4px solid #333;border-top:4px solid #ff2d78;border-radius:50%;animation:spin 1s linear infinite;"></div>
-            <p style="color:#888;font-size:0.85rem;">En attente de confirmation...</p>
-        </div>
-    `;
-    pollPaymentStatus();
-}
-
-async function pollPaymentStatus() {
-    let attempts = 0;
-    const maxAttempts = 60; // 2 minutes max
-    const interval = setInterval(async () => {
-        attempts++;
-        try {
-            const res  = await fetch(API + '/api/payment/status/' + ST.orderId);
-            const data = await res.json();
-            if (data.status === 'paid') {
-                clearInterval(interval);
-                // Stocker les billets et aller à la confirmation
-                if (data.tickets) ST.tickets = data.tickets;
-                showStep(3);
-                loadConfirmation();
-            } else if (data.status === 'failed') {
-                clearInterval(interval);
-                alert('Paiement échoué ou annulé. Veuillez réessayer.');
-                showStep(2);
-                const btn = document.querySelector('#step2 .btn-submit');
-                if (btn) { btn.textContent = 'PAYER MAINTENANT →'; btn.disabled = false; }
-            } else if (attempts >= maxAttempts) {
-                clearInterval(interval);
-                alert('Délai dépassé. Vérifiez votre connexion et réessayez.');
-                showStep(2);
-            }
-        } catch(e) { /* continue polling */ }
-    }, 2000);
-}
 
 function runPaymentAnim() {
     showStep('p');

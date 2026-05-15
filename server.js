@@ -23,6 +23,7 @@ app.use('/api/admin',    adminRoutes);
 app.get('/',             (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/scanner',      (req, res) => res.sendFile(path.join(__dirname, 'public', 'scanner.html')));
 app.get('/confirmation', (req, res) => res.sendFile(path.join(__dirname, 'public', 'confirmation.html')));
+app.get('/admin',        (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
 app.listen(PORT, () => {
     console.log(`\n🎉 NOSTALGIA NIGHT — Serveur démarré`);

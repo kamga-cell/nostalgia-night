@@ -56,7 +56,8 @@ router.get('/stats', authAdmin, (req, res) => {
     const orders = db.prepare(`
         SELECT
             COUNT(*) as total_orders,
-            SUM(CASE WHEN status='paid' THEN 1 ELSE 0 END) as paid_orders,
+            SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) as pending_orders,
+            SUM(CASE WHEN status='paid'    THEN 1 ELSE 0 END) as paid_orders,
             SUM(CASE WHEN status='paid' THEN total_price ELSE 0 END) as total_revenue,
             SUM(CASE WHEN status='paid' AND category='CLASSIC' THEN qty ELSE 0 END) as classic_sold,
             SUM(CASE WHEN status='paid' AND category='VIP'     THEN qty ELSE 0 END) as vip_sold
@@ -79,6 +80,63 @@ router.get('/stats', authAdmin, (req, res) => {
 router.get('/orders', authAdmin, (req, res) => {
     const orders = db.prepare('SELECT * FROM orders ORDER BY created_at DESC LIMIT 100').all();
     res.json(orders);
+});
+
+// ─── GET /api/admin/reservations ───────────────────────────────
+// Liste des réservations en attente de confirmation
+router.get('/reservations', authAdmin, (req, res) => {
+    const reservations = db.prepare(`
+        SELECT id, prenom, nom, email, phone, category, qty, total_price, created_at, status
+        FROM orders
+        WHERE status = 'pending'
+        ORDER BY created_at DESC
+    `).all();
+    res.json(reservations);
+});
+
+// ─── POST /api/admin/confirm/:orderId ──────────────────────────
+// Confirmer le paiement d'une réservation → génère les billets + envoie email
+router.post('/confirm/:orderId', authAdmin, async (req, res) => {
+    const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.orderId);
+    if (!order)                  return res.status(404).json({ error: 'Commande introuvable' });
+    if (order.status === 'paid') return res.status(400).json({ error: 'Déjà confirmée' });
+
+    // Marquer comme payé
+    db.prepare(`UPDATE orders SET status='paid', paid_at=CURRENT_TIMESTAMP WHERE id=?`).run(order.id);
+
+    // Générer les billets
+    const { v4: uuidv4 } = require('uuid');
+    const insertTicket = db.prepare(`
+        INSERT INTO tickets (id, order_id, prenom, nom, category)
+        VALUES (?, ?, ?, ?, ?)
+    `);
+    const ticketIds = [];
+    for (let i = 0; i < order.qty; i++) {
+        const ticketId = 'NN-' + Date.now().toString(36).toUpperCase().slice(-5) +
+                         '-' + uuidv4().slice(0, 5).toUpperCase();
+        insertTicket.run(ticketId, order.id, order.prenom, order.nom, order.category);
+        ticketIds.push(ticketId);
+    }
+
+    console.log(`✅ Réservation ${order.id} confirmée — Billets: ${ticketIds.join(', ')}`);
+
+    // Envoyer l'email avec les billets
+    let emailSent = false;
+    try {
+        const mailer = require('../mailer');
+        await mailer.sendTicketEmail(order, ticketIds);
+        emailSent = true;
+    } catch (e) {
+        console.warn('Email non envoyé:', e.message);
+    }
+
+    res.json({
+        success: true,
+        orderId: order.id,
+        tickets: ticketIds,
+        emailSent,
+        message: `Paiement confirmé — ${ticketIds.length} billet(s) généré(s) et envoyé(s) par email`
+    });
 });
 
 // ─── GET /api/admin/scan-log ───────────────────────────────────
