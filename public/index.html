@@ -249,28 +249,18 @@
             padding:4px 18px;
         }
 
-        /* ── MY TICKETS ── */
-        .my-tickets-section { padding:60px 24px; max-width:920px; margin:0 auto; }
-        .my-tickets-grid { display:grid; gap:14px; margin-top:28px; }
-        .saved-ticket {
-            background:var(--card-bg); border:1px solid rgba(255,255,255,.07);
-            padding:18px 22px; display:flex; justify-content:space-between;
-            align-items:center; flex-wrap:wrap; gap:12px; transition:border-color .3s;
+        /* ── MY TICKETS (supprimé — billets livrés via vérification IA) ── */
+
+        /* ── VÉRIFICATION PAIEMENT ── */
+        .verify-spinner {
+            width:44px; height:44px;
+            border:3px solid rgba(0,255,255,.18);
+            border-top-color:var(--cyan);
+            border-radius:50%;
+            animation:vspin .75s linear infinite;
+            margin:0 auto;
         }
-        .saved-ticket:hover { border-color:rgba(255,20,147,.3); }
-        .saved-ticket-name { font-family:'Bebas Neue',cursive; font-size:1.15rem; letter-spacing:2px; margin-bottom:3px; }
-        .saved-ticket-details { font-size:.82rem; color:var(--gray); letter-spacing:.8px; }
-        .saved-ticket-actions { display:flex; gap:8px; }
-        .btn-sm { padding:8px 16px; font-family:'Bebas Neue',cursive; font-size:.88rem; letter-spacing:2px; cursor:pointer; border:none; transition:all .2s; }
-        .btn-sm-pink { background:var(--pink); color:#000; }
-        .btn-sm-pink:hover { background:var(--pink-dark); }
-        .btn-sm-red { background:#cc2200; color:#fff; }
-        .btn-sm-red:hover { background:#ff2200; }
-        .empty-tickets {
-            text-align:center; padding:48px; color:var(--gray);
-            font-size:.95rem; letter-spacing:1px;
-            border:1px dashed rgba(255,255,255,.1);
-        }
+        @keyframes vspin { to { transform:rotate(360deg); } }
 
         /* ── SCANNER BANNER ── */
         .scanner-banner {
@@ -499,7 +489,6 @@
     <div class="nav-logo neon-pink">NOSTALGIA<span style="color:var(--cyan)">NIGHT</span></div>
     <div class="nav-links">
         <button class="nav-link" onclick="document.getElementById('tickets').scrollIntoView({behavior:'smooth'})">LES PASS</button>
-        <button class="nav-link" onclick="document.getElementById('my-tickets').scrollIntoView({behavior:'smooth'})">MES BILLETS</button>
         <button class="nav-btn" onclick="openModal()">🎫 ACHETER</button>
     </div>
 </nav>
@@ -598,12 +587,6 @@
     </div>
 </section>
 
-<!-- MY TICKETS -->
-<section class="my-tickets-section" id="my-tickets">
-    <h2 class="section-title">MES <span class="neon-cyan">BILLETS</span></h2>
-    <div class="section-div"></div>
-    <div class="my-tickets-grid" id="tickets-list"></div>
-</section>
 
 <!-- SCANNER BANNER -->
 <div class="scanner-banner">
@@ -801,58 +784,83 @@
                 </div>
             </div>
 
-            <!-- ÉTAPE 2b : Référence de transaction — apparaît après clic sur Orange ou MTN -->
-            <div id="txn-section" style="display:none;margin-bottom:16px;">
-                <div style="background:#0a0f0a;border:1px solid rgba(0,255,65,.25);border-radius:8px;padding:16px 18px;">
-                    <div style="font-size:.75rem;color:#00FF41;letter-spacing:2px;font-weight:700;margin-bottom:6px;">
-                        ✅ PAIEMENT INITIÉ — DERNIÈRE ÉTAPE
+            <!-- ── Zone upload capture paiement — apparaît après clic USSD ── -->
+            <div id="upload-section" style="display:none;margin-bottom:16px;">
+
+                <!-- Panel principal -->
+                <div id="upload-panel" style="background:#0a0f0a;border:1px solid rgba(0,255,65,.25);border-radius:8px;padding:18px;">
+                    <div style="font-size:.75rem;color:#00FF41;letter-spacing:2px;font-weight:700;margin-bottom:8px;">
+                        📸 IMPORTEZ VOTRE CAPTURE SMS
                     </div>
-                    <div style="font-size:.78rem;color:var(--gray);margin-bottom:14px;line-height:1.5;">
-                        Après validation de votre code secret, vous recevez un <strong style="color:#fff;">SMS de confirmation</strong> de MTN ou Orange avec une <strong style="color:var(--yellow);">référence de transaction</strong>.<br>
-                        Entrez-la ci-dessous pour prouver votre paiement :
+                    <p style="font-size:.78rem;color:var(--gray);margin-bottom:14px;line-height:1.6;">
+                        Après validation de votre code secret, faites une <strong style="color:#fff">capture d'écran du SMS de confirmation</strong>
+                        MTN ou Orange et importez-la. Notre IA vérifie et vous délivre le billet instantanément.
+                    </p>
+
+                    <!-- Zone drag & drop -->
+                    <div id="drop-zone"
+                         onclick="document.getElementById('screenshot-input').click()"
+                         ondragover="event.preventDefault();this.style.borderColor='#00FF41';this.style.background='rgba(0,255,65,.08)'"
+                         ondragleave="this.style.borderColor='rgba(0,255,65,.25)';this.style.background='rgba(0,255,65,.02)'"
+                         ondrop="onImageDrop(event)"
+                         style="border:2px dashed rgba(0,255,65,.25);border-radius:8px;padding:28px 16px;
+                                text-align:center;cursor:pointer;transition:all .25s;
+                                background:rgba(0,255,65,.02);margin-bottom:12px;">
+                        <div style="font-size:2.2rem;margin-bottom:6px;">📸</div>
+                        <div style="font-size:.85rem;color:#00FF41;font-weight:700;margin-bottom:4px;">Appuyez pour importer</div>
+                        <div style="font-size:.7rem;color:var(--gray);">ou glissez votre image ici · PNG · JPG · WEBP · Max 8 MB</div>
+                    </div>
+                    <input id="screenshot-input" type="file" accept="image/*"
+                           style="display:none;" onchange="onImageSelected(this)">
+
+                    <!-- Aperçu image sélectionnée -->
+                    <div id="img-preview" style="display:none;margin-bottom:12px;text-align:center;">
+                        <img id="preview-img" style="max-width:100%;max-height:200px;border-radius:6px;
+                             border:1px solid rgba(0,255,65,.3);object-fit:contain;" alt="Capture paiement">
+                        <div id="preview-name" style="font-size:.68rem;color:var(--gray);margin-top:6px;"></div>
                     </div>
 
-                    <!-- Exemple visuel -->
-                    <div style="background:#111;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:.72rem;color:#555;font-style:italic;border-left:3px solid #333;">
-                        Exemple SMS MTN : <span style="color:#aaa;">"Vous avez transféré 5000 FCFA... <strong style="color:var(--yellow);">ID: TXN2620493812</strong>"</span><br>
-                        Exemple SMS Orange : <span style="color:#aaa;">"Transfert réussi... <strong style="color:var(--yellow);">Réf: OM241118.1423.A12345</strong>"</span>
-                    </div>
-
-                    <label style="font-size:.72rem;color:var(--gray);letter-spacing:1.5px;display:block;margin-bottom:6px;">
-                        RÉFÉRENCE / ID DE TRANSACTION *
-                    </label>
-                    <input id="txn-ref-input"
-                           type="text"
-                           placeholder="Ex: TXN2620493812 ou OM241118.1423.A12345"
-                           oninput="onTxnRefInput()"
-                           style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:6px;
-                                  color:#fff;font-family:'Rajdhani',sans-serif;font-size:.95rem;
-                                  padding:12px 14px;margin-bottom:10px;box-sizing:border-box;
-                                  letter-spacing:1px;outline:none;transition:border-color .2s;"
-                           onfocus="this.style.borderColor='var(--yellow)'"
-                           onblur="this.style.borderColor='#333'">
-                    <div id="txn-err" style="display:none;color:#ff4444;font-size:.72rem;margin-bottom:8px;">
-                        ⚠️ Veuillez entrer la référence de votre SMS de confirmation
-                    </div>
-
-                    <!-- Bouton WhatsApp — activé seulement quand référence saisie -->
-                    <a id="wa-btn" href="#" target="_blank" style="text-decoration:none;display:block;">
-                        <button id="wa-btn-inner"
-                                disabled
-                                style="background:#1a2e1a;border:2px solid #444;color:#444;
-                                       font-family:'Bebas Neue',cursive;font-size:1.05rem;letter-spacing:2px;
-                                       padding:13px 20px;cursor:not-allowed;width:100%;border-radius:6px;
-                                       transition:all .3s;" type="button">
-                            💬 ENVOYER MA CONFIRMATION SUR WHATSAPP →
-                        </button>
-                    </a>
-                    <p style="font-size:.68rem;color:var(--gray);text-align:center;margin-top:8px;letter-spacing:.8px;">
-                        Le bouton s'active après saisie de votre référence de transaction
+                    <!-- Bouton vérifier -->
+                    <button id="verify-btn" onclick="verifyPayment()" disabled type="button"
+                            style="background:#111;border:2px solid #333;color:#444;
+                                   font-family:'Bebas Neue',cursive;font-size:1.05rem;letter-spacing:2px;
+                                   padding:14px 20px;cursor:not-allowed;width:100%;border-radius:6px;
+                                   transition:all .3s;margin-bottom:8px;">
+                        🔍 VÉRIFIER MON PAIEMENT →
+                    </button>
+                    <p style="font-size:.68rem;color:var(--gray);text-align:center;letter-spacing:.8px;">
+                        ⚡ Vérification automatique par IA — billet disponible immédiatement si validé
                     </p>
                 </div>
+
+                <!-- Chargement IA -->
+                <div id="verify-loading" style="display:none;text-align:center;padding:32px 20px;
+                     background:#0a0a15;border:1px solid rgba(0,255,255,.2);border-radius:8px;margin-top:10px;">
+                    <div class="verify-spinner"></div>
+                    <div style="font-family:'Bebas Neue',cursive;font-size:1.15rem;color:var(--cyan);
+                                letter-spacing:3px;margin-top:14px;">ANALYSE EN COURS...</div>
+                    <div style="font-size:.78rem;color:var(--gray);margin-top:6px;">
+                        Notre IA vérifie l'authenticité de votre capture
+                    </div>
+                </div>
+
+                <!-- Erreur / capture invalide -->
+                <div id="verify-error" style="display:none;background:#150505;border:1px solid rgba(255,68,68,.3);
+                     border-radius:8px;padding:18px;margin-top:10px;">
+                    <div style="font-family:'Bebas Neue',cursive;font-size:1rem;color:#FF4444;
+                                letter-spacing:2px;margin-bottom:8px;">❌ CAPTURE NON VALIDE</div>
+                    <div id="verify-error-msg" style="font-size:.82rem;color:#aaa;margin-bottom:14px;line-height:1.5;"></div>
+                    <button onclick="resetUpload()"
+                            style="background:transparent;border:1px solid #555;color:#888;
+                                   font-family:'Bebas Neue',cursive;font-size:.88rem;letter-spacing:1.5px;
+                                   padding:9px 20px;cursor:pointer;border-radius:4px;transition:all .2s;"
+                            onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'"
+                            onmouseout="this.style.borderColor='#555';this.style.color='#888'">
+                        ↺ RÉESSAYER
+                    </button>
+                </div>
+
             </div>
-            <!-- Fallback hint (non affiché, conservé pour compat) -->
-            <p id="wa-hint" style="display:none;"></p>
 
             <button class="btn-back" onclick="showStep(1)">← MODIFIER</button>
         </div>
@@ -863,7 +871,7 @@
                 <div style="font-size:3.5rem;margin-bottom:16px;">⏳</div>
                 <div class="proc-title">EN ATTENTE DE <span class="neon-yellow">CONFIRMATION</span></div>
                 <p style="color:var(--gray);margin:12px 0 16px;font-size:.9rem;letter-spacing:.8px;">
-                    Votre réservation est enregistrée.<br>Dès confirmation du paiement, vous recevrez votre billet par <strong style="color:var(--cyan)">email</strong>.
+                    Votre réservation est enregistrée.<br>Dès confirmation de votre paiement, vous recevrez votre billet par <strong style="color:#25D366">WhatsApp</strong>.
                 </p>
 
                 <!-- Récap réservation -->
@@ -898,78 +906,40 @@
             </div>
         </div>
 
-        <!-- ── ÉTAPE 3 : Billet ── -->
-        <div id="step3" style="display:none;">
-            <div class="confirm-wrap">
-                <div class="success-ico">🎉</div>
-                <h2 class="modal-title">PAIEMENT <span class="neon-cyan">CONFIRMÉ !</span></h2>
 
-                <!-- Résumé qty + catégorie -->
-                <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+        <!-- ── ÉTAPE 3 : Billets disponibles ── -->
+        <div id="step3" style="display:none;">
+            <div style="text-align:center;">
+                <div style="font-size:3.2rem;margin-bottom:14px;">🎉</div>
+                <h2 class="modal-title">PAIEMENT <span class="neon-cyan">VÉRIFIÉ !</span></h2>
+                <p style="color:var(--gray);font-size:.85rem;letter-spacing:1px;margin:8px 0 20px;">
+                    Téléchargez votre billet et présentez le QR Code à l'entrée
+                </p>
+
+                <!-- Badges récap -->
+                <div style="display:flex;justify-content:center;gap:10px;margin-bottom:22px;flex-wrap:wrap;">
                     <div style="background:#0a0a15;border:1px solid rgba(0,255,255,.3);border-radius:8px;padding:10px 18px;text-align:center;">
                         <div style="font-size:.65rem;color:var(--gray);letter-spacing:2px;">CATÉGORIE</div>
-                        <div id="s3-cat" style="font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;color:var(--cyan);">CLASSIC</div>
+                        <div id="s3-cat" style="font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;color:var(--cyan);"></div>
                     </div>
                     <div style="background:#0a0a15;border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:10px 18px;text-align:center;">
                         <div style="font-size:.65rem;color:var(--gray);letter-spacing:2px;">BILLETS</div>
-                        <div id="s3-qty" style="font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;color:var(--yellow);">1</div>
+                        <div id="s3-qty" style="font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;color:var(--yellow);"></div>
                     </div>
                     <div style="background:#0a0a15;border:1px solid rgba(255,20,147,.3);border-radius:8px;padding:10px 18px;text-align:center;">
                         <div style="font-size:.65rem;color:var(--gray);letter-spacing:2px;">TOTAL</div>
-                        <div id="s3-total" style="font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;color:var(--pink);">5 000 FCFA</div>
+                        <div id="s3-total" style="font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;color:var(--pink);"></div>
                     </div>
                 </div>
 
-                <p style="color:var(--gray);letter-spacing:1px;font-size:.85rem;margin-bottom:16px;">
-                    Billet(s) généré(s). Téléchargez et présentez le QR Code à l'entrée.
+                <!-- Boutons de téléchargement -->
+                <div id="ticket-dl-links" style="margin-bottom:16px;"></div>
+
+                <p style="font-size:.72rem;color:var(--gray);margin-bottom:18px;line-height:1.7;letter-spacing:.8px;">
+                    📱 Gardez le PDF sur votre téléphone ou imprimez-le<br>
+                    ⚠️ QR Code valable pour <strong style="color:#fff">1 personne uniquement</strong>
                 </p>
-
-                <!-- Aperçu du billet -->
-                <div class="ticket-preview" id="ticket-display">
-                    <div style="position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 12px,rgba(255,255,255,.004) 12px,rgba(255,255,255,.004) 24px);pointer-events:none;"></div>
-                    <div id="tp-qty-badge" class="tp-qty-badge" style="display:none;"></div>
-
-                    <div class="tp-header">
-                        <div>
-                            <div class="tp-event">NOSTALGIA NIGHT</div>
-                            <div class="tp-sub-event">SOIRÉE ANNÉES 90</div>
-                            <div class="tp-cat" id="tp-cat">CLASSIC</div>
-                        </div>
-                    </div>
-
-                    <div class="tp-body">
-                        <div>
-                            <div class="tp-info-row">
-                                <div class="tp-lbl">TITULAIRE</div>
-                                <div class="tp-val" id="tp-holder">—</div>
-                            </div>
-                            <div class="tp-info-row">
-                                <div class="tp-lbl">DATE</div>
-                                <div class="tp-val">18 JUILLET 2026</div>
-                            </div>
-                            <div class="tp-info-row">
-                                <div class="tp-lbl">LIEU</div>
-                                <div class="tp-val">YAOUNDÉ, ODZA</div>
-                            </div>
-                            <div class="tp-info-row">
-                                <div class="tp-lbl">INCLUS</div>
-                                <div class="tp-val" id="tp-perks">—</div>
-                            </div>
-                        </div>
-                        <div class="tp-qr-wrap">
-                            <div class="tp-qr-box" id="qr-box"></div>
-                            <div class="tp-qr-lbl">SCANNER<br>À L'ENTRÉE</div>
-                        </div>
-                    </div>
-
-                    <div class="tp-id">N° BILLET : <span id="tp-id">—</span></div>
-                    <div class="tp-deco">90'S</div>
-                </div>
-
-                <div class="confirm-actions">
-                    <button class="btn-dl" onclick="downloadPDF()">⬇️ TÉLÉCHARGER LE BILLET (PDF)</button>
-                    <button class="btn-close-m" onclick="closeModal()">FERMER</button>
-                </div>
+                <button class="btn-close-m" onclick="closeModal()">FERMER</button>
             </div>
         </div>
 
@@ -989,16 +959,13 @@ const TICKETS = {
 };
 
 const ST = {
-    ticket:   'CLASSIC',
-    orderId:  null,
-    ticketIds: [],
+    ticket:       'CLASSIC',
+    orderId:      null,
     reservationCode: null,
-    totalPrice: 0,
-    prenom: '', nom: '', qty: 1
+    totalPrice:   0,
+    prenom: '', nom: '', qty: 1,
+    uploadedFile: null   // capture screenshot sélectionnée
 };
-
-// Numéro WhatsApp de l'organisatrice (sans +)
-const WA_NUMBER = '237699584355';
 
 // ════════════════════════════════
 // COUNTDOWN
@@ -1144,8 +1111,6 @@ async function step1Next() {
         document.getElementById('res-code').textContent   = data.orderId;
         document.getElementById('pay-amount-txt').textContent = fmt(ST.totalPrice) + ' FCFA';
 
-        // Construire le lien WhatsApp
-        buildWhatsAppLink(data.orderId, prenom, nom, qty, t.name, ST.totalPrice);
         // Construire les liens de paiement USSD directs
         buildPaymentLinks(ST.totalPrice);
         showStep(2);
@@ -1168,288 +1133,159 @@ function buildPaymentLinks(amount) {
     // MTN MoMo Cameroun    : *126*1*1*683222267*MONTANT#
     document.getElementById('mtn-pay-btn').href = 'tel:*126*1*1*683222267*' + amt + '%23';
 
-    // Réinitialiser : cacher la zone référence, désactiver bouton WA
-    document.getElementById('txn-section').style.display = 'none';
-    document.getElementById('txn-ref-input').value = '';
-    const btn = document.getElementById('wa-btn-inner');
-    if (btn) {
-        btn.disabled = true;
-        btn.style.background = '#1a2e1a';
-        btn.style.borderColor = '#444';
-        btn.style.color = '#444';
-        btn.style.cursor = 'not-allowed';
-    }
+    // Réinitialiser la zone d'upload à chaque affichage de l'étape 2
+    document.getElementById('upload-section').style.display = 'none';
+    resetUpload();
 }
 
 // Appelé quand le client clique sur Orange ou MTN
 function onPaymentButtonClicked() {
-    // Laisser le temps à l'USSD de s'ouvrir, puis montrer la zone de saisie
+    // Laisser le temps à l'USSD de s'ouvrir (3,5 s), puis afficher la zone upload
     setTimeout(function() {
-        const section = document.getElementById('txn-section');
+        const section = document.getElementById('upload-section');
         section.style.display = 'block';
-        section.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setTimeout(() => document.getElementById('txn-ref-input').focus(), 400);
+        section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 3500);
 }
 
-// Appelé à chaque frappe dans le champ référence
-function onTxnRefInput() {
-    const val = document.getElementById('txn-ref-input').value.trim();
-    const btn = document.getElementById('wa-btn-inner');
-    document.getElementById('txn-err').style.display = 'none';
-
-    if (val.length >= 6) {
-        // Activer le bouton WhatsApp et y injecter la référence
-        btn.disabled = false;
-        btn.style.background = '#25D366';
-        btn.style.borderColor = '#25D366';
-        btn.style.color = '#000';
-        btn.style.cursor = 'pointer';
-        // Mettre à jour le lien WhatsApp avec la référence
-        updateWhatsAppWithRef(val);
-    } else {
-        btn.disabled = true;
-        btn.style.background = '#1a2e1a';
-        btn.style.borderColor = '#444';
-        btn.style.color = '#444';
-        btn.style.cursor = 'not-allowed';
-    }
-}
-
-function updateWhatsAppWithRef(txnRef) {
-    const code      = document.getElementById('res-code').textContent;
-    const prenom    = document.getElementById('f-prenom').value.trim();
-    const nom       = document.getElementById('f-nom').value.trim();
-    const qty       = parseInt(document.getElementById('f-qty').value || 1);
-    const t         = TICKETS[ST.ticket];
-    const total     = t.price * qty;
-
-    const msg = `Bonjour ! 🎉 Je confirme mon paiement NOSTALGIA NIGHT\n\n` +
-                `🎫 Code réservation : ${code}\n` +
-                `👤 Nom : ${prenom} ${nom}\n` +
-                `🎟 ${qty}x ${t.name} = ${fmt(total)} FCFA\n` +
-                `💳 Référence transaction : ${txnRef}\n\n` +
-                `✅ Paiement effectué. Merci de valider mon billet.`;
-    document.getElementById('wa-btn').href =
-        `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
-}
-
-function buildWhatsAppLink(code, prenom, nom, qty, ticketName, total) {
-    // L'href WhatsApp est mis à jour dynamiquement par updateWhatsAppWithRef()
-    // dès que l'utilisateur saisit sa référence de transaction.
-    // On stocke juste les paramètres pour le onclick (transition vers l'écran d'attente).
-    const waBtn = document.getElementById('wa-btn');
-    waBtn.onclick = function() {
-        // Vérification finale : la référence doit être saisie
-        const ref = document.getElementById('txn-ref-input').value.trim();
-        if (ref.length < 6) {
-            document.getElementById('txn-err').style.display = 'block';
-            return false;
-        }
-        // Passer à l'écran d'attente après envoi WA
-        setTimeout(() => {
-            document.querySelector('.proc-code').textContent = code;
-            const catEl = document.getElementById('proc-cat');
-            catEl.textContent = ticketName;
-            catEl.style.color = ST.ticket === 'VIP' ? 'var(--pink)' : 'var(--cyan)';
-            document.getElementById('proc-qty').textContent   = qty + ' BILLET' + (qty > 1 ? 'S' : '');
-            document.getElementById('proc-total').textContent = fmt(total) + ' FCFA';
-            showStep('p');
-            saveReservation(code, prenom, nom, qty, ticketName, total);
-        }, 800);
-    };
-}
-
-function saveReservation(code, prenom, nom, qty, ticketName, total) {
-    const reservations = JSON.parse(localStorage.getItem('nn_reservations') || '[]');
-    reservations.unshift({ code, prenom, nom, qty, ticketName, total, date: new Date().toISOString(), status: 'pending' });
-    localStorage.setItem('nn_reservations', JSON.stringify(reservations.slice(0, 20)));
-}
-
 // ════════════════════════════════
-// STEP 2 : Réservation confirmée
-// (plus de paiement en ligne)
+// UPLOAD & VÉRIFICATION IA
 // ════════════════════════════════
 
-
-function runPaymentAnim() {
-    showStep('p');
-    const ids = ['ps1','ps2','ps3','ps4'];
-    let i = 0;
-    function nextAnim() {
-        if (i > 0) {
-            document.getElementById(ids[i-1]).classList.remove('ps-active');
-            document.getElementById(ids[i-1]).classList.add('ps-done');
-        }
-        if (i < ids.length) {
-            document.getElementById(ids[i]).classList.add('ps-active');
-            i++;
-            setTimeout(nextAnim, 900);
-        } else {
-            setTimeout(confirmOrder, 400);
-        }
-    }
-    nextAnim();
+function onImageSelected(input) {
+    if (!input.files || !input.files[0]) return;
+    showImagePreview(input.files[0]);
 }
 
-// ════════════════════════════════
-// CONFIRMER LA COMMANDE
-// ════════════════════════════════
-async function confirmOrder() {
-    try {
-        if (!ST.simulated) {
-            const statusRes  = await fetch(API + '/api/payment/status/' + ST.orderId);
-            const statusData = await statusRes.json();
-            if (statusData.status !== 'paid') { pollPaymentStatus(); return; }
-        }
-
-        const res  = await fetch(API + '/api/tickets/confirm/' + ST.orderId, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ payment_ref: ST.paymentRef || 'SIM-' + Date.now() })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
-
-        ST.ticketIds = data.tickets;
-        buildTicketPreview();
-    } catch(err) {
-        showStep(2);
-        alert('Erreur confirmation : ' + err.message);
-    }
-}
-
-async function pollPaymentStatus(attempts) {
-    attempts = attempts || 0;
-    if (attempts > 30) { showStep(2); alert('Delai depasse. Verifiez votre telephone et reessayez.'); return; }
-    await new Promise(r => setTimeout(r, 2000));
-    const res  = await fetch(API + '/api/payment/status/' + ST.orderId);
-    const data = await res.json();
-    if (data.status === 'paid')   { confirmOrder(); }
-    else if (data.status === 'failed') { showStep(2); alert('Paiement refuse. Veuillez reessayer.'); }
-    else { pollPaymentStatus(attempts + 1); }
-}
-
-// ════════════════════════════════
-// APERCU DU BILLET
-// ════════════════════════════════
-function buildTicketPreview() {
-    const prenom = document.getElementById('f-prenom').value.trim();
-    const nom    = document.getElementById('f-nom').value.trim();
-    const qty    = parseInt(document.getElementById('f-qty').value);
-    const t      = TICKETS[ST.ticket];
-    const firstId = ST.ticketIds[0];
-
-    document.getElementById('tp-holder').textContent = (prenom + ' ' + nom).toUpperCase();
-    document.getElementById('tp-perks').textContent  = t.perks;
-    document.getElementById('tp-id').textContent     = firstId + (ST.ticketIds.length > 1 ? ' (+' + (ST.ticketIds.length - 1) + ')' : '');
-
-    const catEl = document.getElementById('tp-cat');
-    catEl.textContent = 'PASS ' + ST.ticket;
-    catEl.className   = 'tp-cat tp-cat-' + ST.ticket.toLowerCase();
-
-    if (qty > 1) {
-        document.getElementById('tp-qty-badge').textContent = 'x' + qty;
-        document.getElementById('tp-qty-badge').style.display = 'block';
-    } else {
-        document.getElementById('tp-qty-badge').style.display = 'none';
-    }
-
-    // Badges catégorie / qty / total dans step3
-    const s3cat = document.getElementById('s3-cat');
-    s3cat.textContent = 'PASS ' + ST.ticket;
-    s3cat.style.color = ST.ticket === 'VIP' ? 'var(--pink)' : 'var(--cyan)';
-    document.getElementById('s3-qty').textContent   = qty + ' billet' + (qty > 1 ? 's' : '');
-    document.getElementById('s3-total').textContent = fmt(t.price * qty) + ' FCFA';
-
-    // QR Code apercu client
-    const qrBox = document.getElementById('qr-box');
-    qrBox.innerHTML = '';
-    new QRCode(qrBox, {
-        text: JSON.stringify({ id: firstId, nom: (prenom + ' ' + nom).toUpperCase(),
-                               cat: ST.ticket, event: 'NOSTALGIA-NIGHT-2026' }),
-        width: 78, height: 78,
-        colorDark: '#000000', colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.H
-    });
-
-    // Sauvegarder dans localStorage
-    saveToHistory({ orderId: ST.orderId, ticketIds: ST.ticketIds,
-                    prenom, nom, category: ST.ticket, qty,
-                    date: new Date().toLocaleString('fr-FR') });
-    showStep(3);
-}
-
-// ════════════════════════════════
-// TELECHARGER PDF (via serveur)
-// ════════════════════════════════
-function downloadPDF() {
-    ST.ticketIds.forEach(function(id) {
-        var a = document.createElement('a');
-        a.href     = API + '/api/tickets/download/' + id;
-        a.target   = '_blank';
-        a.download = 'billet-nostalgia-night-' + id + '.pdf';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    });
-}
-
-// ════════════════════════════════
-// HISTORIQUE LOCAL
-// ════════════════════════════════
-function saveToHistory(entry) {
-    const list = JSON.parse(localStorage.getItem('nn_orders') || '[]');
-    list.push(entry);
-    localStorage.setItem('nn_orders', JSON.stringify(list));
-    renderMyTickets();
-}
-
-function renderMyTickets() {
-    const list = JSON.parse(localStorage.getItem('nn_orders') || '[]');
-    const container = document.getElementById('tickets-list');
-    if (!list.length) {
-        container.innerHTML = '<div class="empty-tickets">Vous n\'avez pas encore de billet.<br>Achetez votre pass ci-dessus !</div>';
+function onImageDrop(e) {
+    e.preventDefault();
+    const file = e.dataTransfer?.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+        alert('Veuillez déposer une image (PNG, JPG, WEBP).');
         return;
     }
-    container.innerHTML = [...list].reverse().map(function(entry, ri) {
-        const realIdx = list.length - 1 - ri;
-        const isVIP   = entry.category === 'VIP';
-        const extra   = entry.ticketIds.length > 1 ? ' (+' + (entry.ticketIds.length - 1) + ')' : '';
-        return '<div class="saved-ticket">' +
-            '<div>' +
-            '<div class="saved-ticket-name ' + (isVIP ? 'neon-pink' : 'neon-cyan') + '">' +
-            (isVIP ? '👑 ' : '') + TICKETS[entry.category].name + '</div>' +
-            '<div class="saved-ticket-details">' +
-            entry.prenom + ' ' + entry.nom.toUpperCase() + ' · ' + entry.qty + ' billet(s)' +
-            ' · ' + entry.ticketIds[0] + extra + ' · ' + entry.date +
-            '</div></div>' +
-            '<div class="saved-ticket-actions">' +
-            '<button class="btn-sm btn-sm-pink" onclick="redownload(' + realIdx + ')">PDF</button>' +
-            '<button class="btn-sm btn-sm-red"  onclick="deleteEntry(' + realIdx + ')">X</button>' +
-            '</div></div>';
-    }).join('');
+    // Réinitialiser le style
+    document.getElementById('drop-zone').style.borderColor = 'rgba(0,255,65,.25)';
+    document.getElementById('drop-zone').style.background  = 'rgba(0,255,65,.02)';
+    showImagePreview(file);
 }
 
-function redownload(idx) {
-    const list  = JSON.parse(localStorage.getItem('nn_orders') || '[]');
-    const entry = list[idx];
-    if (!entry) return;
-    entry.ticketIds.forEach(function(id) {
-        window.open(API + '/api/tickets/download/' + id, '_blank');
-    });
+function showImagePreview(file) {
+    ST.uploadedFile = file;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        document.getElementById('preview-img').src = ev.target.result;
+        document.getElementById('preview-name').textContent =
+            file.name + ' · ' + (file.size / 1024).toFixed(0) + ' Ko';
+        document.getElementById('img-preview').style.display = 'block';
+        document.getElementById('verify-error').style.display = 'none';
+        // Activer le bouton de vérification
+        const btn = document.getElementById('verify-btn');
+        btn.disabled = false;
+        btn.style.background    = 'var(--green)';
+        btn.style.borderColor   = 'var(--green)';
+        btn.style.color         = '#000';
+        btn.style.cursor        = 'pointer';
+    };
+    reader.readAsDataURL(file);
 }
 
-function deleteEntry(idx) {
-    if (!confirm('Supprimer cet enregistrement ?')) return;
-    const list = JSON.parse(localStorage.getItem('nn_orders') || '[]');
-    list.splice(idx, 1);
-    localStorage.setItem('nn_orders', JSON.stringify(list));
-    renderMyTickets();
+async function verifyPayment() {
+    if (!ST.uploadedFile || !ST.orderId) return;
+
+    // Afficher le chargement, masquer les erreurs
+    document.getElementById('upload-panel').style.display    = 'none';
+    document.getElementById('verify-loading').style.display  = 'block';
+    document.getElementById('verify-error').style.display    = 'none';
+
+    try {
+        const formData = new FormData();
+        formData.append('screenshot', ST.uploadedFile, ST.uploadedFile.name || 'capture.jpg');
+        formData.append('orderId', ST.orderId);
+
+        const res  = await fetch(API + '/api/tickets/verify-payment', {
+            method: 'POST',
+            body:   formData
+        });
+        const data = await res.json();
+
+        document.getElementById('verify-loading').style.display = 'none';
+
+        if (!res.ok) {
+            // Erreur technique (503, 429…)
+            document.getElementById('upload-panel').style.display = 'block';
+            document.getElementById('verify-error-msg').textContent = data.error || 'Erreur serveur. Réessayez.';
+            document.getElementById('verify-error').style.display   = 'block';
+            return;
+        }
+
+        if (data.valid) {
+            // ── Paiement validé : remplir step3 et afficher ──
+            const t   = TICKETS[ST.ticket];
+            const qty = parseInt(document.getElementById('f-qty').value || 1);
+
+            const s3cat = document.getElementById('s3-cat');
+            s3cat.textContent = t.name;
+            s3cat.style.color = ST.ticket === 'VIP' ? 'var(--pink)' : 'var(--cyan)';
+            document.getElementById('s3-qty').textContent   = qty + ' billet' + (qty > 1 ? 's' : '');
+            document.getElementById('s3-total').textContent = fmt(t.price * qty) + ' FCFA';
+
+            // Boutons téléchargement (un par billet)
+            const linksDiv = document.getElementById('ticket-dl-links');
+            linksDiv.innerHTML = data.ticketIds.map((id, i) =>
+                `<a href="${API}/api/tickets/download/${id}" target="_blank"
+                    style="display:flex;align-items:center;justify-content:center;gap:8px;
+                           background:var(--pink);color:#000;text-decoration:none;
+                           font-family:'Bebas Neue',cursive;font-size:1rem;letter-spacing:2px;
+                           padding:13px 20px;border-radius:6px;margin-bottom:8px;
+                           transition:opacity .2s;"
+                    onmouseover="this.style.opacity='.82'"
+                    onmouseout="this.style.opacity='1'">
+                    ⬇️ TÉLÉCHARGER ${data.ticketIds.length > 1 ? 'BILLET ' + (i+1) : 'MON BILLET'}
+                    <span style="font-size:.72rem;opacity:.7;">— ${id}</span>
+                </a>`
+            ).join('');
+
+            showStep(3);
+        } else {
+            // ── Capture invalide : afficher l'erreur et permettre retry ──
+            document.getElementById('upload-panel').style.display = 'block';
+            document.getElementById('verify-error-msg').textContent =
+                data.reason || 'La capture n\'est pas valide. Vérifiez que votre SMS de confirmation est bien visible.';
+            document.getElementById('verify-error').style.display = 'block';
+        }
+    } catch (err) {
+        document.getElementById('verify-loading').style.display = 'none';
+        document.getElementById('upload-panel').style.display   = 'block';
+        document.getElementById('verify-error-msg').textContent = 'Erreur réseau : ' + err.message + '. Vérifiez votre connexion.';
+        document.getElementById('verify-error').style.display   = 'block';
+    }
 }
 
-// Init
-renderMyTickets();
+function resetUpload() {
+    ST.uploadedFile = null;
+    const inp = document.getElementById('screenshot-input');
+    if (inp) inp.value = '';
+    const prev = document.getElementById('img-preview');
+    if (prev) prev.style.display = 'none';
+    const err = document.getElementById('verify-error');
+    if (err) err.style.display = 'none';
+    const panel = document.getElementById('upload-panel');
+    if (panel) panel.style.display = 'block';
+    const loading = document.getElementById('verify-loading');
+    if (loading) loading.style.display = 'none';
+    const btn = document.getElementById('verify-btn');
+    if (btn) {
+        btn.disabled          = true;
+        btn.style.background  = '#111';
+        btn.style.borderColor = '#333';
+        btn.style.color       = '#444';
+        btn.style.cursor      = 'not-allowed';
+    }
+}
+
+
 </script>
 </body>
 </html>

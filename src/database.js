@@ -50,6 +50,14 @@ db.exec(`
         scanned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         scanner_ip TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS payment_verifications (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id    TEXT NOT NULL,
+        result      TEXT NOT NULL DEFAULT 'pending',
+        ai_reason   TEXT,
+        attempted_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
 `);
 
 module.exports = db;
